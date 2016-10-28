@@ -1,0 +1,10 @@
+[package]
+name = "firmware"
+version = "0.1.0"
+authors = ["Fabrice Desré <fabrice@desre.org>"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
