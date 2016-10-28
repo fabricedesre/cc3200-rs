@@ -6,11 +6,12 @@ MEMORY
   RAM   : ORIGIN = 0x20004000, LENGTH = 240K
 }
 
+_estack = ORIGIN(RAM) + LENGTH(RAM);
+
 SECTIONS
 {
   .vector_table :
   {
-    LONG(ORIGIN(RAM) + LENGTH(RAM))
     KEEP(*(.reset))
   } > RAM
 
