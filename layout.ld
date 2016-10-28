@@ -17,7 +17,26 @@ SECTIONS
 
   .text :
   {
-    *(.text*)
+    *(.text*)          /* .text* sections (code) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+  } > RAM
+
+  __init_data = .;
+
+  .data : AT(__init_data)
+  {
+      _data = .;
+      *(.data*)
+      . = ALIGN (8);
+      _edata = .;
+  } > RAM
+
+  .bss :
+  {
+      _bss = .;
+      *(.bss*)
+      *(COMMON)
+      _ebss = .;
   } > RAM
 
   /DISCARD/ :

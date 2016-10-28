@@ -1,4 +1,21 @@
 [root]
 name = "firmware"
 version = "0.1.0"
+dependencies = [
+ "cc3200-sys 0.1.0",
+]
 
+[[package]]
+name = "cc3200-sys"
+version = "0.1.0"
+dependencies = [
+ "gcc 0.3.38 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "gcc"
+version = "0.3.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[metadata]
+"checksum gcc 0.3.38 (registry+https://github.com/rust-lang/crates.io-index)" = "553f11439bdefe755bf366b264820f1da70f3aaf3924e594b886beb9c831bcf5"
