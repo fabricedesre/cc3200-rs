@@ -1,4 +1,5 @@
 #![feature(lang_items)]
+#![feature(asm)]
 
 // We won't use the usual `main` function. We are going to use a different "entry point".
 #![no_main]
@@ -27,11 +28,7 @@ pub fn start() -> ! {
     }
 }
 
-// Ignore this part for now :-). It will covered in a later section.
-mod vector_table {
-    #[link_section = ".reset"]
-    static RESET: fn() -> ! = ::start;
-}
+pub mod isr_vectors;
 
 // Finally, we need to define the panic_fmt "lang item", which is just a function. This specifies
 // what the program should do when a `panic!` occurs. Our program won't panic, so we can leave the
