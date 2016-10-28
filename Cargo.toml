@@ -3,6 +3,9 @@ name = "firmware"
 version = "0.1.0"
 authors = ["Fabrice Desré <fabrice@desre.org>"]
 
+[dependencies]
+cc3200-sys = { path = "cc3200-sys" }
+
 [profile.dev]
 panic = "abort"
 
