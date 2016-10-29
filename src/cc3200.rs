@@ -32,9 +32,9 @@ pub enum LedEnum {
     LED3   = 0x4, // GREEN LED D5/GP11/Pin2
 }
 
-pub struct CC3200 { }
+pub struct Board { }
 
-impl CC3200 {
+impl Board {
     pub fn init() {
         unsafe {
             board_init();
@@ -60,7 +60,11 @@ impl CC3200 {
             GPIO_IF_LedOn(led as i8);
         }
     }
+}
 
+pub struct Utils { }
+
+impl Utils {
     pub fn delay(loops: u32) {
         unsafe {
             MAP_UtilsDelay(loops);
