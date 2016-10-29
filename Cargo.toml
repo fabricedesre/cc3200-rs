@@ -5,6 +5,7 @@ authors = ["Fabrice Desré <fabrice@desre.org>"]
 
 [dependencies]
 cc3200-sys = { path = "cc3200-sys" }
+freertos_rs = "0.1"
 
 [profile.dev]
 panic = "abort"
