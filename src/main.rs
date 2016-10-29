@@ -27,7 +27,6 @@ pub fn start() -> ! {
 
     Board::init();
 
-    //CC3200::LedConfigure([LedEnum::LED1, as u8 | LedEnum::LED2 as u8 | LedEnum::LED3 as u8);
     Board::led_configure(&[LedEnum::LED1, LedEnum::LED2, LedEnum::LED3]);
 
     Board::led_off(LedName::MCU_ALL_LED_IND);
