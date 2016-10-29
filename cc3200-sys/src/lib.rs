@@ -11,11 +11,19 @@ pub use self::{
 };
 
 extern {
+  // From board.c
   pub fn board_init();
+  pub fn console_putchar(char: i8);
 
+  // From sdk/examples/common/gpio_if.c
   pub fn GPIO_IF_LedConfigure(pins: u8);
   pub fn GPIO_IF_LedOff(ledNum: i8);
   pub fn GPIO_IF_LedOn(ledNum: i8);
 
+  // From sdk/examples/common/uart_if.c
+  pub fn ClearTerm();
+  pub fn InitTerm();
+
+  // From sdk/examples/common/utils.c
   pub fn UtilsDelay(loops: u32);
 }

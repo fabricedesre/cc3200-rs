@@ -6,7 +6,7 @@ extern crate cc3200_sys;
 
 use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_LedOff, MAP_UtilsDelay};
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, dead_code)]
 pub enum LedName {
     NO_LED_IND = 0,
     MCU_SENDING_DATA_IND,
@@ -58,6 +58,28 @@ impl Board {
     pub fn led_on(led: LedName) {
         unsafe {
             GPIO_IF_LedOn(led as i8);
+        }
+    }
+
+    pub fn clear_term() {
+        unsafe {
+            cc3200_sys::ClearTerm();
+        }
+    }
+
+    pub fn init_term() {
+        unsafe {
+            cc3200_sys::InitTerm();
+        }
+    }
+
+    pub fn message(msg: &str) {
+        for char in msg.chars() {
+            // Lossy converstion from unicode to ASCII
+            let ascii_char = { if char > '\x7f' {'?'} else {char}};
+            unsafe {
+                cc3200_sys::console_putchar(ascii_char as i8);
+            }
         }
     }
 }
