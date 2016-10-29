@@ -15,6 +15,8 @@
 #include "prcm.h"
 #include "gpio.h"
 #include "pin.h"
+#include "uart.h"
+#include "uart_if.h"
 #include "utils.h"
 
 extern void (* const ISR_VECTORS[])(void);
@@ -58,6 +60,7 @@ void board_init(void) {
     // Enable Peripheral Clocks 
     //
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK);
 
     //
     // Configure PIN_64 (GPIO9) for GPIOOutput - RED LED
@@ -76,4 +79,21 @@ void board_init(void) {
     //
     MAP_PinTypeGPIO(PIN_02, PIN_MODE_0, false);
     MAP_GPIODirModeSet(GPIOA1_BASE, 0x8, GPIO_DIR_MODE_OUT);
+
+    //
+    // Configure PIN_55 (GPIO1) for UART0 UART0_TX
+    //
+    MAP_PinTypeUART(PIN_55, PIN_MODE_3);
+
+    //
+    // Configure PIN_57 (GPIO2) for UART0 UART0_RX
+    //
+    MAP_PinTypeUART(PIN_57, PIN_MODE_3);
+}
+
+void console_putchar(char ch) {
+    if (ch == '\n') {
+        MAP_UARTCharPut(CONSOLE, '\r');
+    }
+    MAP_UARTCharPut(CONSOLE, ch);
 }

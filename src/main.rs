@@ -27,6 +27,10 @@ pub fn start() -> ! {
 
     Board::init();
 
+    Board::init_term();
+    Board::clear_term();
+    Board::message("CC3200 Sample code\n");
+
     Board::led_configure(&[LedEnum::LED1, LedEnum::LED2, LedEnum::LED3]);
 
     Board::led_off(LedName::MCU_ALL_LED_IND);
@@ -36,8 +40,10 @@ pub fn start() -> ! {
     loop {
         Board::led_on(LedName::MCU_RED_LED_GPIO);
         if counter & 1 != 0 {
+            Board::message("1\n");
             Board::led_on(LedName::MCU_ORANGE_LED_GPIO);
         } else {
+            Board::message("0\n");
             Board::led_off(LedName::MCU_ORANGE_LED_GPIO);
         }
         if counter & 2 != 0 {
