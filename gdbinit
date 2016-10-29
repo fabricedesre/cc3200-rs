@@ -37,7 +37,7 @@
 #*****************************************************************************
 
 #*****************************************************************************
-#Connect To the tartget using OpenOCD
+# Connect To the target using OpenOCD
 #*****************************************************************************
 target remote | openocd -c "gdb_port pipe; log_output openocd.log" -f cc3200.cfg
 
@@ -47,14 +47,7 @@ target remote | openocd -c "gdb_port pipe; log_output openocd.log" -f cc3200.cfg
 load
 
 #*****************************************************************************
-# Initialize the SP and PC values from the application's
-# vector table
-#*****************************************************************************
-#set $sp = g_pfnVectors[0]
-#set $pc = g_pfnVectors[1]
-
-#*****************************************************************************
-# Set break point at main and run to main
+# Set break point at start and run to start
 #*****************************************************************************
 break start
 continue
