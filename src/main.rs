@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #![feature(lang_items)]
 #![feature(asm)]
 
@@ -8,11 +12,8 @@
 // those are not available in this platform.
 #![no_std]
 
-extern crate cc3200_sys;
-
-use cc3200_sys::{ board_init,
-                  GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_LedOff,
-                  MAP_UtilsDelay, LedEnum, LedName };
+mod cc3200;
+use cc3200::{CC3200, LedEnum, LedName};
 
 // Conceptually, this is our program "entry point". It's the first thing the microcontroller will
 // execute when it (re)boots. (As far as the linker is concerned the entry point must be named
@@ -24,37 +25,34 @@ use cc3200_sys::{ board_init,
 #[no_mangle]
 pub fn start() -> ! {
 
-    unsafe { board_init() };
+    CC3200::init();
 
-    unsafe { GPIO_IF_LedConfigure(LedEnum::LED1 as u8|LedEnum::LED2 as u8|LedEnum::LED3 as u8) };
+    //CC3200::LedConfigure([LedEnum::LED1, as u8 | LedEnum::LED2 as u8 | LedEnum::LED3 as u8);
+    CC3200::led_configure(&[LedEnum::LED1, LedEnum::LED2, LedEnum::LED3]);
 
-    unsafe { GPIO_IF_LedOff(LedName::MCU_ALL_LED_IND as i8) };
+    CC3200::led_off(LedName::MCU_ALL_LED_IND);
     let mut counter = 0;
 
     // We can't return from this function so we just spin endlessly here.
     loop {
-        unsafe {
-            GPIO_IF_LedOn(LedName::MCU_RED_LED_GPIO as i8);
-            if counter & 1 != 0
-            {
-              GPIO_IF_LedOn(LedName::MCU_ORANGE_LED_GPIO as i8);
-            } else {
-                GPIO_IF_LedOff(LedName::MCU_ORANGE_LED_GPIO as i8);
-            }
-            if counter & 2 != 0
-            {
-                GPIO_IF_LedOn(LedName::MCU_GREEN_LED_GPIO as i8);
-            } else {
-                GPIO_IF_LedOff(LedName::MCU_GREEN_LED_GPIO as i8);
-            }
-            MAP_UtilsDelay(1333333);
-            GPIO_IF_LedOff(LedName::MCU_RED_LED_GPIO as i8);
-            MAP_UtilsDelay(1333333);
-            GPIO_IF_LedOn(LedName::MCU_RED_LED_GPIO as i8);
-            MAP_UtilsDelay(1333333);
-            GPIO_IF_LedOff(LedName::MCU_RED_LED_GPIO as i8);
-            MAP_UtilsDelay(1333333 * 6);
+        CC3200::led_on(LedName::MCU_RED_LED_GPIO);
+        if counter & 1 != 0 {
+            CC3200::led_on(LedName::MCU_ORANGE_LED_GPIO);
+        } else {
+            CC3200::led_off(LedName::MCU_ORANGE_LED_GPIO);
         }
+        if counter & 2 != 0 {
+            CC3200::led_on(LedName::MCU_GREEN_LED_GPIO);
+        } else {
+            CC3200::led_off(LedName::MCU_GREEN_LED_GPIO);
+        }
+        CC3200::delay(1333333);
+        CC3200::led_off(LedName::MCU_RED_LED_GPIO);
+        CC3200::delay(1333333);
+        CC3200::led_on(LedName::MCU_RED_LED_GPIO);
+        CC3200::delay(1333333);
+        CC3200::led_off(LedName::MCU_RED_LED_GPIO);
+        CC3200::delay(1333333 * 6);
 
         counter += 1;
     }
@@ -67,5 +65,5 @@ pub mod isr_vectors;
 // function body empty for now.
 mod lang_items {
     #[lang = "panic_fmt"]
-    extern fn panic_fmt() {}
+    extern "C" fn panic_fmt() {}
 }
