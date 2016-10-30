@@ -15,3 +15,6 @@ Build with `./build.sh`
 Load on the board to debug with `./run.sh`
 
 Flash with `./flash.sh`
+
+Note that flashing requires the use of cc3200tool, which can be installed by following
+the README [here](https://github.com/ALLTERCO/cc3200tool)
