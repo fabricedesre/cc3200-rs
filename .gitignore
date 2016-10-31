@@ -1,3 +1,4 @@
 target
 openocd.log
 firmware.map
+Cargo.lock

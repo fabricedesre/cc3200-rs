@@ -1,12 +1,19 @@
 [package]
-name = "firmware"
+name = "cc3200"
 version = "0.1.0"
 authors = ["Fabrice Desré <fabrice@desre.org>"]
+
+[lib]
+name = "cc3200"
 
 [dependencies]
 cc3200-sys = { path = "cc3200-sys" }
 freertos_alloc = { path = "freertos_alloc" }
 freertos_rs = "0.1"
+
+[[example]]
+name = "blinky"
+path = "example/blinky.rs"
 
 [profile.dev]
 panic = "abort"
