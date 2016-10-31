@@ -13,13 +13,13 @@
 #![crate_name = "freertos_alloc"]
 #![crate_type = "rlib"]
 
-extern {
-  // From realloc_helper.c
-  pub fn realloc_helper(old_ptr: *mut u8, old_size: usize, new_size: usize) -> *mut u8;
+extern "C" {
+    // From realloc_helper.c
+    pub fn realloc_helper(old_ptr: *mut u8, old_size: usize, new_size: usize) -> *mut u8;
 
-  // From FreeRTOS heap_4.c
-  pub fn pvPortMalloc(size: usize) -> *mut u8;
-  pub fn vPortFree(ptr: *mut u8);
+    // From FreeRTOS heap_4.c
+    pub fn pvPortMalloc(size: usize) -> *mut u8;
+    pub fn vPortFree(ptr: *mut u8);
 }
 
 // Listed below are the five allocation functions currently required by custom
@@ -32,28 +32,34 @@ extern {
 // with respect to alignment in that aspect.
 
 #[no_mangle]
-pub extern fn __rust_allocate(size: usize, _align: usize) -> *mut u8 {
+pub extern "C" fn __rust_allocate(size: usize, _align: usize) -> *mut u8 {
     unsafe { pvPortMalloc(size) }
 }
 
 #[no_mangle]
-pub extern fn __rust_deallocate(ptr: *mut u8, _old_size: usize, _align: usize) {
+pub extern "C" fn __rust_deallocate(ptr: *mut u8, _old_size: usize, _align: usize) {
     unsafe { vPortFree(ptr) }
 }
 
 #[no_mangle]
-pub extern fn __rust_reallocate(ptr: *mut u8, old_size: usize, size: usize,
-                                _align: usize) -> *mut u8 {
+pub extern "C" fn __rust_reallocate(ptr: *mut u8,
+                                    old_size: usize,
+                                    size: usize,
+                                    _align: usize)
+                                    -> *mut u8 {
     unsafe { realloc_helper(ptr, old_size, size) }
 }
 
 #[no_mangle]
-pub extern fn __rust_reallocate_inplace(_ptr: *mut u8, old_size: usize,
-                                        _size: usize, _align: usize) -> usize {
+pub extern "C" fn __rust_reallocate_inplace(_ptr: *mut u8,
+                                            old_size: usize,
+                                            _size: usize,
+                                            _align: usize)
+                                            -> usize {
     old_size // this api is not supported by libc
 }
 
 #[no_mangle]
-pub extern fn __rust_usable_size(size: usize, _align: usize) -> usize {
+pub extern "C" fn __rust_usable_size(size: usize, _align: usize) -> usize {
     size
 }

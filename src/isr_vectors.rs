@@ -2,26 +2,22 @@ use core::option::Option;
 use core::option::Option::{Some, None};
 
 extern {
-  fn start();
-  fn _estack(); // Not really a function, but the linker doesn't care.
-
   fn isr_nmi();
-  fn isr_hardfault();
   fn isr_mmfault();
   fn isr_busfault();
   fn isr_usagefault();
-
-  fn isr_svcall();
-  fn isr_pendsv();
-  fn isr_systick();
 
   fn isr_debugmon();
   fn isr_default();
 
   // FreeRTOS handlers
-  //fn vPortSVCHandler();
-  //fn xPortPendSVHandler();
-  //fn xPortSysTickHandler();
+  fn vPortSVCHandler();
+  fn xPortPendSVHandler();
+  fn xPortSysTickHandler();
+
+  // From board.c
+  fn isr_reset();
+  fn isr_hardfault();
 }
 
 #[no_mangle]
@@ -33,9 +29,6 @@ pub unsafe extern fn isr_handler_wrapper() {
 
       .thumb_func
       isr_nmi:
-
-      .thumb_func
-      isr_hardfault:
 
       .thumb_func
       isr_mmfault:
@@ -66,13 +59,12 @@ pub unsafe extern fn isr_handler_wrapper() {
       bkpt" :::: "volatile");
 }
 
-const ISR_COUNT: usize = 256;
+const ISR_COUNT: usize = 255;
 
 #[link_section=".reset"]
 #[no_mangle]
 pub static ISR_VECTORS: [Option<unsafe extern fn()>; ISR_COUNT] = [
-  Some(_estack),                // Stack pointer
-  Some(start),                  // Reset
+  Some(isr_reset),              // Reset
   Some(isr_nmi),                // NMI
   Some(isr_hardfault),          // Hard Fault
   Some(isr_mmfault),            // Memory Management Fault
@@ -83,19 +75,11 @@ pub static ISR_VECTORS: [Option<unsafe extern fn()>; ISR_COUNT] = [
   None,                         // Reserved
   None,                         // Reserved
 
-  // When we enable FreeRTOS, use these 5
-  //Some(vPortSVCHandler),
-  //Some(isr_debugmon),           // Reserved for debug
-  //None,                         // Reserved
-  //Some(xPortPendSVHandler),     // The PendSV handler
-  //Some(xPortSysTickHandler),    // The SysTick handler
-
-  // For non-FreeRTOS, use these 5
-  Some(isr_svcall),             // SVCall
+  Some(vPortSVCHandler),        // SVC Handler
   Some(isr_debugmon),           // Reserved for debug
   None,                         // Reserved
-  Some(isr_pendsv),             // PendSV
-  Some(isr_systick),            // SysTick
+  Some(xPortPendSVHandler),     // The PendSV handler
+  Some(xPortSysTickHandler),    // The SysTick handler
 
   Some(isr_default),            // GPIO Port A0
   Some(isr_default),            // GPIO Port A1

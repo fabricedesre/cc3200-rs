@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include "board.h"
 
@@ -23,14 +24,25 @@ extern void (* const ISR_VECTORS[])(void);
 extern uint32_t _bss;
 extern uint32_t _ebss;
 
-void board_init(void) {
+// start is written in rust
+void start(void);
 
+__attribute__((naked))
+void isr_reset(void)
+{
     // On the cc3200 there is no internal flash, so we don't need to copy
     // initialized data from ROM into RAM, the bootloader does it for us
     // when it loads the program into RAM.
 
     //
-    // Zero fill the bss segment.
+    // Zero fill the bss segment. Note that since our stack is also inside
+    // the .bss section, we have to clear the stack before calling any
+    // functions that might need a return address to be stored on the stack.
+    //
+    // Note: Not sure why yet, but FreeRTOS doesn't seem to like the stack
+    //       being at the end of RAM. It might be because the stack isn't
+    //       cleared, or it may be because its accessing the word at the
+    //       end of the stack.
     //
     __asm("    ldr     r0, =_bss\n"
           "    ldr     r1, =_ebss\n"
@@ -42,6 +54,13 @@ void board_init(void) {
           "    strlt   r2, [r0], #4\n"
           "    blt     zero_loop");
 
+    //
+    // Call the application's entry point.
+    //
+    start();
+}
+
+void board_init(void) {
 
     // Initialize the vector table
     MAP_IntVTableBaseSet((unsigned long)&ISR_VECTORS[0]);
@@ -57,7 +76,7 @@ void board_init(void) {
     // for mapping of Module pin numbers to Device pin numbers.
 
     //
-    // Enable Peripheral Clocks 
+    // Enable Peripheral Clocks
     //
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK);
@@ -96,4 +115,209 @@ void console_putchar(char ch) {
         MAP_UARTCharPut(CONSOLE, '\r');
     }
     MAP_UARTCharPut(CONSOLE, ch);
+}
+
+void console_puts(const char *s) {
+    while (*s != '\0') {
+        console_putchar(*s++);
+    }
+}
+
+void vApplicationMallocFailedHook()
+{
+    console_puts("vApplicationMallocFailedHook\n");
+
+    //Handle Memory Allocation Errors
+    while(1)
+    {
+    }
+}
+
+void vApplicationStackOverflowHook( void *pxTask,
+                                   signed char *pcTaskName)
+{
+    console_puts("vApplicationStackOverflowHook\n");
+
+    //Handle FreeRTOS Stack Overflow
+    while(1)
+    {
+    }
+}
+
+void
+vApplicationIdleHook( void)
+{
+    //Handle Idle Hook for Profiling, Power Management etc
+}
+
+#define likely(x) __builtin_expect((x), 1)
+
+void *memcpy(void *dst, const void *src, size_t n) {
+    if (likely(!(((uintptr_t)dst) & 3) && !(((uintptr_t)src) & 3))) {
+        // pointers aligned
+        uint32_t *d = dst;
+        const uint32_t *s = src;
+
+        // copy words first
+        for (size_t i = (n >> 2); i; i--) {
+            *d++ = *s++;
+        }
+
+        if (n & 2) {
+            // copy half-word
+            *(uint16_t*)d = *(const uint16_t*)s;
+            d = (uint32_t*)((uint16_t*)d + 1);
+            s = (const uint32_t*)((const uint16_t*)s + 1);
+        }
+
+        if (n & 1) {
+            // copy byte
+            *((uint8_t*)d) = *((const uint8_t*)s);
+        }
+    } else {
+        // unaligned access, copy bytes
+        uint8_t *d = dst;
+        const uint8_t *s = src;
+
+        for (; n; n--) {
+            *d++ = *s++;
+        }
+    }
+
+    return dst;
+}
+
+void __aeabi_memcpy(void *dest, const void *source, size_t n) __attribute__((alias ("memcpy")));
+
+void *memset(void *s, int c, size_t n) {
+    if (c == 0 && ((uintptr_t)s & 3) == 0) {
+        // aligned store of 0
+        uint32_t *s32 = s;
+        for (size_t i = n >> 2; i > 0; i--) {
+            *s32++ = 0;
+        }
+        if (n & 2) {
+            *((uint16_t*)s32) = 0;
+            s32 = (uint32_t*)((uint16_t*)s32 + 1);
+        }
+        if (n & 1) {
+            *((uint8_t*)s32) = 0;
+        }
+    } else {
+        uint8_t *s2 = s;
+        for (; n > 0; n--) {
+            *s2++ = c;
+        }
+    }
+    return s;
+}
+
+static char *fmt_hex(uint32_t val, char *buf) {
+    const char *hexDig = "0123456789abcdef";
+
+    buf[0] = hexDig[(val >> 28) & 0x0f];
+    buf[1] = hexDig[(val >> 24) & 0x0f];
+    buf[2] = hexDig[(val >> 20) & 0x0f];
+    buf[3] = hexDig[(val >> 16) & 0x0f];
+    buf[4] = hexDig[(val >> 12) & 0x0f];
+    buf[5] = hexDig[(val >>  8) & 0x0f];
+    buf[6] = hexDig[(val >>  4) & 0x0f];
+    buf[7] = hexDig[(val >>  0) & 0x0f];
+    buf[8] = '\0';
+
+    return buf;
+}
+
+void print_reg(const char *label, uint32_t val) {
+    char hexStr[9];
+    console_puts(label);
+    console_puts(fmt_hex(val, hexStr));
+    console_putchar('\n');
+}
+
+// From ARM CMSIS
+typedef struct
+{
+  volatile const    uint32_t CPUID;         /*!< Offset: 0x000 (R/ )  CPUID Base Register */
+  volatile          uint32_t ICSR;          /*!< Offset: 0x004 (R/W)  Interrupt Control and State Register */
+  volatile          uint32_t VTOR;          /*!< Offset: 0x008 (R/W)  Vector Table Offset Register */
+  volatile          uint32_t AIRCR;         /*!< Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register */
+  volatile          uint32_t SCR;           /*!< Offset: 0x010 (R/W)  System Control Register */
+  volatile          uint32_t CCR;           /*!< Offset: 0x014 (R/W)  Configuration Control Register */
+  volatile          uint8_t  SHP[12U];      /*!< Offset: 0x018 (R/W)  System Handlers Priority Registers (4-7, 8-11, 12-15) */
+  volatile          uint32_t SHCSR;         /*!< Offset: 0x024 (R/W)  System Handler Control and State Register */
+  volatile          uint32_t CFSR;          /*!< Offset: 0x028 (R/W)  Configurable Fault Status Register */
+  volatile          uint32_t HFSR;          /*!< Offset: 0x02C (R/W)  HardFault Status Register */
+  volatile          uint32_t DFSR;          /*!< Offset: 0x030 (R/W)  Debug Fault Status Register */
+  volatile          uint32_t MMFAR;         /*!< Offset: 0x034 (R/W)  MemManage Fault Address Register */
+  volatile          uint32_t BFAR;          /*!< Offset: 0x038 (R/W)  BusFault Address Register */
+  volatile          uint32_t AFSR;          /*!< Offset: 0x03C (R/W)  Auxiliary Fault Status Register */
+  volatile const    uint32_t PFR[2U];       /*!< Offset: 0x040 (R/ )  Processor Feature Register */
+  volatile const    uint32_t DFR;           /*!< Offset: 0x048 (R/ )  Debug Feature Register */
+  volatile const    uint32_t ADR;           /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register */
+  volatile const    uint32_t MMFR[4U];      /*!< Offset: 0x050 (R/ )  Memory Model Feature Register */
+  volatile const    uint32_t ISAR[5U];      /*!< Offset: 0x060 (R/ )  Instruction Set Attributes Register */
+                    uint32_t RESERVED0[5U];
+  volatile          uint32_t CPACR;         /*!< Offset: 0x088 (R/W)  Coprocessor Access Control Register */
+} SCB_Type;
+
+#define SCS_BASE    (0xE000E000UL)          /*!< System Control Space Base Address */
+#define SCB_BASE    (SCS_BASE + 0x0D00UL)   /*!< System Control Block Base Address */
+#define SCB         ((SCB_Type *)SCB_BASE)  /*!< SCB configuration struct */
+
+// The ARMv7M Architecture manual (section B.1.5.6) says that upon entry
+// to an exception, that the registers will be in the following order on the
+// // stack: R0, R1, R2, R3, R12, LR, PC, XPSR
+
+typedef struct {
+    uint32_t    r0, r1, r2, r3, r12, lr, pc, xpsr;
+} ExceptionRegisters_t;
+
+void isr_hardfault_c_handler(ExceptionRegisters_t *regs) {
+    console_puts("HardFault\n");
+    print_reg("R0    ", regs->r0);
+    print_reg("R1    ", regs->r1);
+    print_reg("R2    ", regs->r2);
+    print_reg("R3    ", regs->r3);
+    print_reg("R12   ", regs->r12);
+    print_reg("LR    ", regs->lr);
+    print_reg("PC    ", regs->pc);
+    print_reg("XPSR  ", regs->xpsr);
+
+    uint32_t cfsr = SCB->CFSR;
+
+    print_reg("HFSR  ", SCB->HFSR);
+    print_reg("CFSR  ", cfsr);
+    if (cfsr & 0x80) {
+        print_reg("MMFAR ", SCB->MMFAR);
+    }
+    if (cfsr & 0x8000) {
+        print_reg("BFAR  ", SCB->BFAR);
+    }
+    /* Go to infinite loop when Hard Fault exception occurs */
+    while (1) {
+        ;
+    }
+}
+
+// Naked functions have no compiler generated gunk, so are the best thing to
+// use for asm functions.
+__attribute__((naked))
+void isr_hardfault(void) {
+
+    // From the ARMv7M Architecture Reference Manual, section B.1.5.6
+    // on entry to the Exception, the LR register contains, amongst other
+    // things, the value of CONTROL.SPSEL. This can be found in bit 3.
+    //
+    // If CONTROL.SPSEL is 0, then the exception was stacked up using the
+    // main stack pointer (aka MSP). If CONTROL.SPSEL is 1, then the exception
+    // was stacked up using the process stack pointer (aka PSP).
+
+    __asm volatile(
+    " tst lr, #4    \n"             // Test Bit 3 to see which stack pointer we should use.
+    " ite eq        \n"             // Tell the assembler that the nest 2 instructions are if-then-else
+    " mrseq r0, msp \n"             // Make R0 point to main stack pointer
+    " mrsne r0, psp \n"             // Make R0 point to process stack pointer
+    " b isr_hardfault_c_handler\n"  // Off to C land
+    );
 }
