@@ -1,7 +1,14 @@
 #!/bin/sh
 
+OPT=debug
+for opt in $@; do
+    if [ "$opt" == "--release" ]; then
+        OPT=release
+    fi
+done
+
 TARGET=thumbv7em-none-eabi
-ELF_DIR=target/${TARGET}/debug
+ELF_DIR=target/${TARGET}/${OPT}
 FIRMWARE_ELF=${ELF_DIR}/firmware
 
 set -x
