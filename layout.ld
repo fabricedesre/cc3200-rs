@@ -6,12 +6,11 @@ MEMORY
   RAM   : ORIGIN = 0x20004000, LENGTH = 240K
 }
 
-_estack = ORIGIN(RAM) + LENGTH(RAM);
-
 SECTIONS
 {
   .vector_table :
   {
+    LONG(_estack)
     KEEP(*(.reset))
   } > RAM
 
@@ -19,7 +18,10 @@ SECTIONS
   {
     *(.text*)          /* .text* sections (code) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
-  } > RAM
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
+    . = ALIGN(8);
+    _etext = .;
+ } > RAM
 
   __init_data = .;
 
@@ -34,6 +36,9 @@ SECTIONS
   .bss :
   {
       _bss = .;
+      _stack = .;
+      . = . + 2048;
+      _estack = .;
       *(.bss*)
       *(COMMON)
       _ebss = .;

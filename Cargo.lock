@@ -3,6 +3,8 @@ name = "firmware"
 version = "0.1.0"
 dependencies = [
  "cc3200-sys 0.1.0",
+ "freertos_alloc 0.1.0",
+ "freertos_rs 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -13,9 +15,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "freertos_alloc"
+version = "0.1.0"
+dependencies = [
+ "gcc 0.3.38 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "freertos_rs"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "gcc"
 version = "0.3.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
+"checksum freertos_rs 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "93cae5a12f9b3831de1101d4d68c1738efe34e8d909d7d09bce0a9cbccdb4cd8"
 "checksum gcc 0.3.38 (registry+https://github.com/rust-lang/crates.io-index)" = "553f11439bdefe755bf366b264820f1da70f3aaf3924e594b886beb9c831bcf5"
