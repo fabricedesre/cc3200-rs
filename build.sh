@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 OPT=debug
 for opt in $@; do
