@@ -2,9 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#![feature(lang_items)]
-#![feature(asm)]
-
 // We won't use the usual `main` function. We are going to use a different "entry point".
 #![no_main]
 
@@ -13,17 +10,15 @@
 #![no_std]
 #![feature(alloc)]
 
+extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
 extern crate freertos_alloc;
 
-mod cc3200;
-use cc3200::{Board, Utils, LedEnum, LedName};
+use cc3200::cc3200::{Board, Utils, LedEnum, LedName};
 
 use alloc::arc::Arc;
 use freertos_rs::{CurrentTask, Duration, Task, Queue};
-
-pub mod isr_vectors;
 
 // Conceptually, this is our program "entry point". It's the first thing the microcontroller will
 // execute when it (re)boots. (As far as the linker is concerned the entry point must be named
@@ -113,12 +108,4 @@ pub fn start() -> ! {
     // heap to initialize the IDLE and timer tasks
 
     loop {}
-}
-
-// Finally, we need to define the panic_fmt "lang item", which is just a function. This specifies
-// what the program should do when a `panic!` occurs. Our program won't panic, so we can leave the
-// function body empty for now.
-mod lang_items {
-    #[lang = "panic_fmt"]
-    extern "C" fn panic_fmt() {}
 }

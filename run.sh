@@ -9,7 +9,7 @@ done
 
 TARGET=thumbv7em-none-eabi
 ELF_DIR=target/${TARGET}/${OPT}
-FIRMWARE_ELF=${ELF_DIR}/firmware
+FIRMWARE_ELF=${ELF_DIR}/examples/blinky
 
 set -x
 arm-none-eabi-gdb -x gdbinit ${FIRMWARE_ELF}
