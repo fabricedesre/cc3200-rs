@@ -2,7 +2,7 @@
 
 OPT=debug
 for opt in $@; do
-    if [ "$opt" == "--release" ]; then
+    if [ x"$opt" == x"--release" ]; then
         OPT=release
     fi
 done
