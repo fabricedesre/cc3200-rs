@@ -19,4 +19,7 @@ path = "example/blinky.rs"
 panic = "abort"
 
 [profile.release]
+# Note: gcc has some codegen issues with -O3
+opt-level = "s"
+debug = true
 panic = "abort"
