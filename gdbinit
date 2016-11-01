@@ -44,7 +44,15 @@ target remote | openocd -c "gdb_port pipe; log_output openocd.log" -f cc3200.cfg
 #*****************************************************************************
 # Load the binary
 #*****************************************************************************
+monitor soft_reset_halt
 load
+
+#*****************************************************************************
+# Initialize the SP and PC values from the application's 
+# vector table
+#*****************************************************************************
+set $sp = *(int *)0x20004000
+set $pc = *(int *)0x20004004
 
 #*****************************************************************************
 # Set break point at start and run to start
