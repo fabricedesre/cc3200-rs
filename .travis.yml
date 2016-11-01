@@ -7,7 +7,8 @@ addons:
       - gcc-arm-none-eabi
 
 script:
-  - curl https://sh.rustup.rs -sSf | sh -y
+  - curl https://sh.rustup.rs -sSf -o rustup.sh
+  - ./rustup.sh -y
   - /home/travis/.cargo/bin/rustup add component rust-src
   - /home/travis/.cargo/bin/cargo install xargo
   - PATH=/home/travis/.cargo/bin:$PATH ./build.sh
