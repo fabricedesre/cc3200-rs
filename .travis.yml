@@ -19,6 +19,7 @@ addons:
         - gcc-arm-none-eabi
 
 script:
+  - ls -lRa /usr/lib/gcc/arm-none-eabi/
   - curl https://sh.rustup.rs -sSf -o rustup.sh
   - chmod +x ./rustup.sh
   - ./rustup.sh -y
