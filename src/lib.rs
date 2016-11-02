@@ -8,6 +8,8 @@
 
 #![feature(asm, lang_items)]
 
+extern crate cc3200_sys;
+
 pub mod cc3200;
 pub mod isr_vectors;
 
@@ -17,4 +19,17 @@ pub mod isr_vectors;
 mod lang_items {
     #[lang = "panic_fmt"]
     extern "C" fn panic_fmt() {}
+}
+
+// Needed in debug builds to not get this linking error:
+// .../rustlib/src/rust/src/libcore/fmt/num.rs:61: undefined reference to `__aeabi_memclr4'
+#[cfg(debug_assertions)]
+#[no_mangle]
+pub unsafe extern fn __aeabi_memclr4(s: *mut u8, n: usize) -> *mut u8 {
+    let mut i = 0;
+    while i < n {
+        *s.offset(i as isize) = 0u8;
+        i += 1;
+    }
+    return s;
 }

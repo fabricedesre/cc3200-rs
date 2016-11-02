@@ -4,6 +4,7 @@
 
 extern crate cc3200_sys;
 
+use core;
 use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_LedOff,
                        MAP_UtilsDelay};
 
@@ -64,6 +65,16 @@ impl Board {
         }
     }
 
+    pub fn start_scheduler() {
+        unsafe {
+            cc3200_sys::vTaskStartScheduler();
+        }
+    }
+}
+
+pub struct Console { }
+
+impl Console {
     pub fn clear_term() {
         unsafe {
             cc3200_sys::ClearTerm();
@@ -87,12 +98,31 @@ impl Board {
             }
         }
     }
+}
 
-    pub fn start_scheduler() {
-        unsafe {
-            cc3200_sys::vTaskStartScheduler();
-        }
+impl core::fmt::Write for Console {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        Console::message(s);
+        Ok(())
     }
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($args:tt)*) => {
+        // Ignore logging errors. It's not worth killing the program because of
+        // failed debug output. It would be nicer to save the error and report
+        // it later, however.
+        use core::fmt::Write;
+        let mut console = $crate::cc3200::Console {};
+        let _ = write!(console, $($args)*);
+    }
+}
+
+#[macro_export]
+macro_rules! println {
+    ($fmt:expr)               => ( print!(concat!($fmt, '\n')) );
+    ($fmt:expr, $($args:tt)*) => ( print!(concat!($fmt, '\n'), $($args)*) );
 }
 
 pub struct Utils { }
