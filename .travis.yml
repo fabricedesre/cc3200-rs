@@ -4,10 +4,12 @@
 os:
   - linux
 
-dist: trusty
+dist: xenial
 
 addons:
     apt:
+      sources:
+        - debian-sid
       packages:
         - gcc-arm-none-eabi
 
