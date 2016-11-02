@@ -1,6 +1,11 @@
 # We install rust ourselves because travis doesn't use rustup yet and that
 # prevents installation of the rust-src component.
 
+os:
+  - linux
+
+dist: xenial
+
 addons:
     apt:
       packages:
