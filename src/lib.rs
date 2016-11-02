@@ -14,7 +14,7 @@ extern crate cc3200_sys;
 pub mod cc3200;
 pub mod isr_vectors;
 
-// These functions are used by the compiler, but not  are normally provided by libstd.
+// These functions are used by the compiler, but are normally provided by libstd.
 #[allow(private_no_mangle_fns)]
 mod lang_items {
     use core::fmt::Arguments;
