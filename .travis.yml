@@ -6,7 +6,7 @@ sudo: true
 os:
   - linux
 
-dist: xenial
+dist: rusty
 
 cache:
   - apt
@@ -14,7 +14,7 @@ cache:
 addons:
     apt:
       sources:
-        - sourceline: 'deb http://archive.ubuntu.com/ubuntu xenial universe'
+        - sourceline: 'deb http://archive.ubuntu.com/ubuntu rusty universe'
       packages:
         - gcc-arm-none-eabi
 
