@@ -1,15 +1,20 @@
 # We install rust ourselves because travis doesn't use rustup yet and that
 # prevents installation of the rust-src component.
 
+sudo: false
+
 os:
   - linux
 
 dist: xenial
 
+cache:
+  - apt
+
 addons:
     apt:
       sources:
-        - debian-sid
+        - sourceline: 'deb http://archive.ubuntu.com/ubuntu xenial universe'
       packages:
         - gcc-arm-none-eabi
 
