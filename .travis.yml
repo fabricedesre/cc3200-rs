@@ -17,6 +17,7 @@ addons:
         - sourceline: 'deb http://archive.ubuntu.com/ubuntu rusty universe'
       packages:
         - gcc-arm-none-eabi
+        - libnewlib-arm-none-eabi
 
 script:
   - ls -lRa /usr/lib/gcc/arm-none-eabi/
