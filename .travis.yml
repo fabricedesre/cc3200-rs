@@ -1,0 +1,23 @@
+# We install rust ourselves because travis doesn't use rustup yet and that
+# prevents installation of the rust-src component.
+
+sudo: true
+
+os:
+  - linux
+
+dist: rusty
+
+cache:
+  - apt
+
+addons:
+    apt:
+      sources:
+        - sourceline: 'deb http://archive.ubuntu.com/ubuntu rusty universe'
+      packages:
+        - gcc-arm-none-eabi
+        - libnewlib-arm-none-eabi
+
+script:
+  - ./scripts/travis.sh
