@@ -9,7 +9,7 @@ addons:
 script:
   - curl https://sh.rustup.rs -sSf -o rustup.sh
   - chmod +x ./rustup.sh
-  - ./rustup.sh -y nightly
+  - ./rustup.sh -y --channel nightly
   - /home/travis/.cargo/bin/rustup component add rust-src
   - /home/travis/.cargo/bin/cargo install xargo
   - ls -lRa .cargo/
