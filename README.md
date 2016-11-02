@@ -1,6 +1,6 @@
 Rust on the cc3200
 ==================
-The sample code is from http://japaric.github.io/copper/
+[![Build Status](https://travis-ci.org/fabricedesre/cc3200-rs.svg?branch=master)](https://travis-ci.org/fabricedesre/cc3200-rs)
 
 Prerequisites
 =============
