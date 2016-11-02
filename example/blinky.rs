@@ -10,15 +10,18 @@
 #![no_std]
 #![feature(alloc)]
 
+#[macro_use]
 extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
 extern crate freertos_alloc;
 
-use cc3200::cc3200::{Board, Utils, LedEnum, LedName};
+use cc3200::cc3200::{Board, Console, Utils, LedEnum, LedName};
 
 use alloc::arc::Arc;
 use freertos_rs::{CurrentTask, Duration, Task, Queue};
+
+static VERSION: &'static str = "1.0";
 
 // Conceptually, this is our program "entry point". It's the first thing the microcontroller will
 // execute when it (re)boots. (As far as the linker is concerned the entry point must be named
@@ -32,9 +35,9 @@ pub fn start() -> ! {
 
     Board::init();
 
-    Board::init_term();
-    Board::clear_term();
-    Board::message("CC3200 Sample code\n");
+    Console::init_term();
+    Console::clear_term();
+    println!("Welcome to CC3200 blinking leds version {}", VERSION);
 
     let queue = Arc::new(Queue::new(10).unwrap());
     let _producer = {
@@ -61,9 +64,9 @@ pub fn start() -> ! {
             .start(move || {
                 loop {
                     let msg = queue.receive(Duration::ms(2000)).unwrap();
-                    Board::message("Received: ");
-                    Board::message(msg);
-                    Board::message("\n");
+                    Console::message("Received: ");
+                    Console::message(msg);
+                    Console::message("\n");
                 }
             })
             .unwrap()
