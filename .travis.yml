@@ -8,6 +8,7 @@ addons:
 
 script:
   - curl https://sh.rustup.rs -sSf -o rustup.sh
+  - chmod +x ./rustup.sh
   - ./rustup.sh -y
   - ls -lRa
   - /home/travis/.cargo/bin/rustup add component rust-src
