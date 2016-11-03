@@ -27,6 +27,29 @@ extern uint32_t _ebss;
 // start is written in rust
 void start(void);
 
+typedef struct
+{
+  volatile uint32_t DHCSR;  /*!< Offset: 0x000 (R/W)  Debug Halting Control and Status Register */
+  volatile uint32_t DCRSR;  /*!< Offset: 0x004 ( /W)  Debug Core Register Selector Register */
+  volatile uint32_t DCRDR;  /*!< Offset: 0x008 (R/W)  Debug Core Register Data Register */
+  volatile uint32_t DEMCR;  /*!< Offset: 0x00C (R/W)  Debug Exception and Monitor Control Register */
+} CoreDebug_Type;
+
+#define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
+#define CoreDebug           ((CoreDebug_Type *)     CoreDebug_BASE)   /*!< Core Debug configuration struct */
+
+int is_debugger_running(void) {
+    return (CoreDebug->DHCSR & 1) != 0; // Bit 0 is DEBUGEN
+}
+
+void reset(void)
+{
+    if (is_debugger_running()) {
+        __asm volatile ("bkpt #0");
+    }
+    PRCMMCUReset(1);
+}
+
 __attribute__((naked))
 void isr_reset(void)
 {

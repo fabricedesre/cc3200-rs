@@ -70,6 +70,14 @@ impl Board {
             cc3200_sys::vTaskStartScheduler();
         }
     }
+
+    pub fn disable_irq() {
+        unsafe { asm!("cpsid i"); }
+    }
+
+    pub fn reset() {
+        unsafe { cc3200_sys::reset(); }
+    }
 }
 
 pub struct Console { }
