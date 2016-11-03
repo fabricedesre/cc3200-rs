@@ -39,8 +39,6 @@ pub fn start() -> ! {
     Console::clear_term();
     println!("Welcome to CC3200 blinking leds version {}", VERSION);
 
-    assert_eq!(1, 2);
-
     let queue = Arc::new(Queue::new(10).unwrap());
     let _producer = {
         let queue = queue.clone();
