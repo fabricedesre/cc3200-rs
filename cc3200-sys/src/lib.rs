@@ -12,6 +12,7 @@ extern "C" {
     // From board.c
     pub fn board_init();
     pub fn console_putchar(char: i8);
+    pub fn reset();
 
     // From sdk/examples/common/gpio_if.c
     pub fn GPIO_IF_LedConfigure(pins: u8);

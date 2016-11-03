@@ -27,6 +27,11 @@ extern uint32_t _ebss;
 // start is written in rust
 void start(void);
 
+void reset(void)
+{
+  PRCMMCUReset(1);
+}
+
 __attribute__((naked))
 void isr_reset(void)
 {
