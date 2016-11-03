@@ -1,28 +1,28 @@
 use core::option::Option;
 use core::option::Option::{Some, None};
 
-extern {
-  fn isr_nmi();
-  fn isr_mmfault();
-  fn isr_busfault();
-  fn isr_usagefault();
+extern "C" {
+    fn isr_nmi();
+    fn isr_mmfault();
+    fn isr_busfault();
+    fn isr_usagefault();
 
-  fn isr_debugmon();
-  fn isr_default();
+    fn isr_debugmon();
+    fn isr_default();
 
-  // FreeRTOS handlers
-  fn vPortSVCHandler();
-  fn xPortPendSVHandler();
-  fn xPortSysTickHandler();
+    // FreeRTOS handlers
+    fn vPortSVCHandler();
+    fn xPortPendSVHandler();
+    fn xPortSysTickHandler();
 
-  // From board.c
-  fn isr_reset();
-  fn isr_hardfault();
+    // From board.c
+    fn isr_reset();
+    fn isr_hardfault();
 }
 
 #[no_mangle]
-pub unsafe extern fn isr_handler_wrapper() {
-  asm!(".weak isr_nmi, isr_hardfault, isr_mmfault, isr_busfault
+pub unsafe extern "C" fn isr_handler_wrapper() {
+    asm!(".weak isr_nmi, isr_hardfault, isr_mmfault, isr_busfault
       .weak isr_usagefault, isr_svcall, isr_pendsv, isr_systick
       .weak isr_debugmon
       .weak isr_reserved_1
@@ -63,6 +63,7 @@ const ISR_COUNT: usize = 255;
 
 #[link_section=".reset"]
 #[no_mangle]
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub static ISR_VECTORS: [Option<unsafe extern fn()>; ISR_COUNT] = [
   Some(isr_reset),              // Reset
   Some(isr_nmi),                // NMI
@@ -96,12 +97,12 @@ pub static ISR_VECTORS: [Option<unsafe extern fn()>; ISR_COUNT] = [
   Some(isr_default),            // ADC Channel 2
   Some(isr_default),            // ADC Channel 3
   Some(isr_default),            // Watchdog Timer
-  Some(isr_default),            // Timer 0 subtimer A                      
+  Some(isr_default),            // Timer 0 subtimer A
   Some(isr_default),            // Timer 0 subtimer B
   Some(isr_default),            // Timer 1 subtimer A
   Some(isr_default),            // Timer 1 subtimer B
   Some(isr_default),            // Timer 2 subtimer A
-  Some(isr_default),            // Timer 2 subtimer B 
+  Some(isr_default),            // Timer 2 subtimer B
   None, None, None, None,       // Reserved
   Some(isr_default),            // Flash
   None, None, None, None, None, // Reserved
