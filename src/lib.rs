@@ -22,20 +22,16 @@ mod lang_items {
 
     #[lang = "eh_personality"]
     #[no_mangle]
-    pub extern fn rust_eh_personality() {
-    }
+    pub extern "C" fn rust_eh_personality() {}
 
     // This function may be needed based on the compilation target.
     #[lang = "eh_unwind_resume"]
     #[no_mangle]
-    pub extern fn rust_eh_unwind_resume() {
-    }
+    pub extern "C" fn rust_eh_unwind_resume() {}
 
     #[lang = "panic_fmt"]
     #[no_mangle]
-    pub extern fn rust_begin_panic(_msg: Arguments,
-                                   _file: &'static str,
-                                   _line: u32) -> ! {
+    pub extern "C" fn rust_begin_panic(_msg: Arguments, _file: &'static str, _line: u32) -> ! {
         println!("Panic at {}:{} : {}", _file, _line, _msg);
 
         // Disable irqs.
@@ -66,7 +62,7 @@ mod lang_items {
 // .../rustlib/src/rust/src/libcore/fmt/num.rs:61: undefined reference to `__aeabi_memclr4'
 #[cfg(debug_assertions)]
 #[no_mangle]
-pub unsafe extern fn __aeabi_memclr4(s: *mut u8, n: usize) -> *mut u8 {
+pub unsafe extern "C" fn __aeabi_memclr4(s: *mut u8, n: usize) -> *mut u8 {
     let mut i = 0;
     while i < n {
         *s.offset(i as isize) = 0u8;

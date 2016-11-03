@@ -72,11 +72,15 @@ impl Board {
     }
 
     pub fn disable_irq() {
-        unsafe { asm!("cpsid i"); }
+        unsafe {
+            asm!("cpsid i");
+        }
     }
 
     pub fn reset() {
-        unsafe { cc3200_sys::reset(); }
+        unsafe {
+            cc3200_sys::reset();
+        }
     }
 }
 
