@@ -6,7 +6,7 @@ sudo: true
 os:
   - linux
 
-dist: rusty
+dist: trusty
 
 cache:
   - apt
