@@ -78,7 +78,7 @@ pub fn start() -> ! {
         Task::new()
             .name("blinky")
             .start(|| {
-                Board::led_configure(&[LedEnum::LED1, LedEnum::LED2, LedEnum::LED3]);
+                Board::led_configure(&[LedEnum::LED1]);
                 Board::led_off(LedName::MCU_ALL_LED_IND);
                 loop {
                     Board::led_on(LedName::MCU_RED_LED_GPIO);

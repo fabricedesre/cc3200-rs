@@ -6,7 +6,14 @@
 // those are not available in this platform.
 #![no_std]
 
+#![feature(try_from)]
+
+#[macro_use]
+extern crate log;
+
 pub use self::UtilsDelay as MAP_UtilsDelay;
+
+pub mod simplelink;
 
 extern "C" {
     // From board.c
