@@ -14,6 +14,7 @@ fn main() {
     .include("sdk/third_party/FreeRTOS/source/portable/GCC/ARM_CM4")
     .flag("-std=c99")
     .file("board.c")
+    .file("StrPrintf.c")
     .file("freertos_rs.c")
     .file("sdk/driverlib/cpu.c")
     .file("sdk/driverlib/gpio.c")
