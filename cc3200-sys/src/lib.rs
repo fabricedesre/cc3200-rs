@@ -11,6 +11,7 @@ pub use self::UtilsDelay as MAP_UtilsDelay;
 extern "C" {
     // From board.c
     pub fn board_init();
+    pub fn board_test();
     pub fn console_putchar(char: i8);
     pub fn reset();
 

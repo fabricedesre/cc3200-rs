@@ -43,6 +43,12 @@ impl Board {
         }
     }
 
+    pub fn test() {
+        unsafe {
+            cc3200_sys::board_test();
+        }
+    }
+
     pub fn led_configure(leds: &[LedEnum]) {
         let mut val = LedEnum::NO_LED as u8;
         for led in leds {

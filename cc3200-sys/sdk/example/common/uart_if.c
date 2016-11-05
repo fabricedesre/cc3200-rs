@@ -290,6 +290,8 @@ int TrimSpace(char * pcInput)
 //! \return count of characters printed
 //
 //*****************************************************************************
+#if 0
+// We map Report to console_printf
 int Report(const char *pcFormat, ...)
 {
  int iRet = 0;
@@ -335,3 +337,4 @@ int Report(const char *pcFormat, ...)
 #endif
   return iRet;
 }
+#endif

@@ -20,6 +20,8 @@
 #include "uart_if.h"
 #include "utils.h"
 
+#include "StrPrintf.h"
+
 extern void (* const ISR_VECTORS[])(void);
 extern uint32_t _bss;
 extern uint32_t _ebss;
@@ -144,6 +146,25 @@ void console_puts(const char *s) {
     while (*s != '\0') {
         console_putchar(*s++);
     }
+}
+
+static int strxprintf_func(void *param, int ch) {
+    console_putchar(ch);
+    return 1;
+}
+
+int Report(const char *pcFormat, ...) __attribute__((alias ("console_printf")));
+
+int console_printf(const char *fmt, ...) {
+    va_list  args;
+    va_start(args, fmt);
+    int rc = vStrXPrintf(strxprintf_func, NULL, fmt, args);
+    va_end(args);
+    return rc;
+}
+
+void board_test(void) {
+    console_printf("Test: %d, %s\n", 42, "string");
 }
 
 void vApplicationMallocFailedHook()
