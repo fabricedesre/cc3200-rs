@@ -5,6 +5,12 @@
 // Intrinsics documented at http://infocenter.arm.com/help/topic/com.arm.doc.ihi0043d/IHI0043D_rtabi.pdf
 
 #[no_mangle]
+pub unsafe extern "C" fn abort() {
+    unimplemented!();
+}
+
+/*
+#[no_mangle]
 pub unsafe extern "C" fn __aeabi_dcmpeq(arg1: f64, arg2: f64) -> i32 {
     if arg1 == arg2 {
         return 1;
@@ -45,3 +51,4 @@ pub unsafe extern "C" fn __aeabi_i2d(arg: i32) -> f64 {
 pub unsafe extern "C" fn pow(x: f64, y: f64) -> f64 {
     x + y
 }
+*/

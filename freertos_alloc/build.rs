@@ -3,6 +3,7 @@ fn main() {
   gcc::Config::new()
     .compiler("arm-none-eabi-gcc")
     .define("gcc", None)
+    .flag("-fno-exceptions")
     .flag("-mthumb")
     .flag("-mcpu=cortex-m4")
     .flag("-mfloat-abi=softfp")

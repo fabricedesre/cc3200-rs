@@ -13,6 +13,7 @@ fn main() {
         .include("sdk/third_party/FreeRTOS/source/include")
         .include("sdk/third_party/FreeRTOS/source/portable/GCC/ARM_CM4")
         .flag("-std=c99")
+        .flag("-fno-exceptions")
         .flag("-mthumb")
         .flag("-mcpu=cortex-m4")
         .flag("-mfloat-abi=softfp")

@@ -44,9 +44,14 @@ SECTIONS
       _ebss = .;
   } > RAM
 
+  ARM : {
+    __exidx_start = .;
+    *(.ARM.exidx*)
+    __exidx_end = .;
+  } > RAM
+
   /DISCARD/ :
   {
-    *(.ARM.exidx*)
     *(.note.gnu.build-id*)
   }
 }

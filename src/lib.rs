@@ -10,8 +10,8 @@
 // For i2c_devices pow functions.
 #![feature(core_intrinsics)]
 
-#![feature(compiler_builtins_lib)]
-extern crate compiler_builtins;
+//#![feature(compiler_builtins_lib)]
+//extern crate compiler_builtins;
 
 extern crate cc3200_sys;
 #[macro_use]
@@ -27,7 +27,7 @@ pub mod intrinsics;
 
 #[link(name = "m")] extern {} // for pow
 #[link(name = "c")] extern {} // for __erno
-//#[link(name = "gcc")] extern {} // for pow
+//#[link(name = "gcc")] extern {}
 
 // These functions are used by the compiler, but are normally provided by libstd.
 #[allow(private_no_mangle_fns)]
