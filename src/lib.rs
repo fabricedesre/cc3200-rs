@@ -9,8 +9,11 @@
 #![feature(asm, lang_items)]
 
 extern crate cc3200_sys;
+#[macro_use]
+extern crate log;
 
 #[macro_use]
+pub mod logger;
 pub mod cc3200;
 pub mod isr_vectors;
 
