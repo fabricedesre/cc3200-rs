@@ -6,6 +6,10 @@ authors = ["Fabrice Desré <fabrice@desre.org>"]
 [lib]
 name = "cc3200"
 
+[dependencies.compiler_builtins]
+git = "https://github.com/japaric/compiler-builtins.git"
+features = ["c"]
+
 [dependencies]
 cc3200-sys = { path = "cc3200-sys" }
 freertos_alloc = { path = "freertos_alloc" }

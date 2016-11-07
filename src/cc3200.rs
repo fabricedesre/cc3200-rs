@@ -6,8 +6,29 @@ extern crate cc3200_sys;
 
 use core;
 use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_LedOff,
-                       MAP_UtilsDelay};
+                       MAP_UtilsDelay, I2C_IF_Open, I2C_IF_Close, I2C_IF_Write, I2C_IF_Read,
+                       I2C_IF_ReadFrom};
 use logger::SimpleLogger;
+
+#[macro_export]
+macro_rules! print {
+   ($($args:tt)*) => {
+       // Ignore logging errors. It's not worth killing the program because of
+       // failed debug output. It would be nicer to save the error and report
+       // it later, however.
+       {
+           use core::fmt::Write;
+           let mut console = $crate::cc3200::Console {};
+           let _ = write!(console, $($args)*);
+       }
+   }
+}
+
+#[macro_export]
+macro_rules! println {
+   ($fmt:expr)               => ( print!(concat!($fmt, '\n')) );
+   ($fmt:expr, $($args:tt)*) => ( print!(concat!($fmt, '\n'), $($args)*) );
+}
 
 #[allow(non_camel_case_types, dead_code)]
 pub enum LedName {
@@ -124,6 +145,75 @@ impl core::fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         Console::message(s);
         Ok(())
+    }
+}
+
+pub enum I2COpenMode {
+    MasterModeStd = 0,
+    MasterModeFst = 1,
+}
+
+static mut I2C_IS_OPEN: bool = false;
+static I2C_SUCCESS: i32 = 0;
+
+#[derive(Clone, Copy)]
+pub struct I2C { }
+
+impl I2C {
+    pub fn open(mode: I2COpenMode) -> Option<Self> {
+        unsafe {
+            // Only allow one instance to be created in a given open mode.
+            if I2C_IS_OPEN || I2C_IF_Open(mode as u32) != I2C_SUCCESS {
+                return None;
+            }
+            I2C_IS_OPEN = true;
+        }
+        return Some(I2C {});
+    }
+
+    pub fn close(&self) {
+        unsafe {
+            // TODO: decide what to do if we never called I2C_IF_Open
+            I2C_IF_Close();
+            I2C_IS_OPEN = false;
+        }
+    }
+
+    pub fn write(&self, addr: u8, data: &[u8], stop: u8) -> Result<(), ()> {
+        if data.len() > 255 {
+            return Err(());
+        }
+        unsafe {
+            if I2C_IF_Write(addr, data.as_ptr() as *mut u8, data.len() as u8, stop) == I2C_SUCCESS {
+                return Ok(());
+            }
+        }
+        return Err(());
+    }
+
+    pub fn read(&self, addr: u8, data: &mut [u8]) -> Result<(), ()> {
+        if data.len() > 255 {
+            return Err(());
+        }
+        unsafe {
+            if I2C_IF_Read(addr, data.as_ptr() as *mut u8, data.len() as u8) == I2C_SUCCESS {
+                return Ok(());
+            }
+        }
+        return Err(());
+    }
+
+    pub fn read_from(&self, addr: u8, wr_data: &[u8], rd_data: &mut [u8]) -> Result<(), ()> {
+        if wr_data.len() > 255 || rd_data.len() > 255 {
+            return Err(());
+        }
+        unsafe {
+            if I2C_IF_ReadFrom(addr, wr_data.as_ptr() as *mut u8, wr_data.len() as u8,
+                               rd_data.as_ptr() as *mut u8, rd_data.len() as u8) == I2C_SUCCESS {
+                return Ok(());
+            }
+        }
+        return Err(());
     }
 }
 

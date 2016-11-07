@@ -7,6 +7,11 @@
 #![no_std]
 
 #![feature(asm, lang_items)]
+// For i2c_devices pow functions.
+#![feature(core_intrinsics)]
+
+#![feature(compiler_builtins_lib)]
+extern crate compiler_builtins;
 
 extern crate cc3200_sys;
 #[macro_use]
@@ -15,7 +20,14 @@ extern crate log;
 #[macro_use]
 pub mod logger;
 pub mod cc3200;
+pub mod i2c_devices;
 pub mod isr_vectors;
+
+pub mod intrinsics;
+
+#[link(name = "m")] extern {} // for pow
+#[link(name = "c")] extern {} // for __erno
+//#[link(name = "gcc")] extern {} // for pow
 
 // These functions are used by the compiler, but are normally provided by libstd.
 #[allow(private_no_mangle_fns)]
@@ -59,17 +71,4 @@ mod lang_items {
         // Just please the Rust compiler which expects a divergent function.
         loop {}
     }
-}
-
-// Needed in debug builds to not get this linking error:
-// .../rustlib/src/rust/src/libcore/fmt/num.rs:61: undefined reference to `__aeabi_memclr4'
-#[cfg(debug_assertions)]
-#[no_mangle]
-pub unsafe extern "C" fn __aeabi_memclr4(s: *mut u8, n: usize) -> *mut u8 {
-    let mut i = 0;
-    while i < n {
-        *s.offset(i as isize) = 0u8;
-        i += 1;
-    }
-    return s;
 }
