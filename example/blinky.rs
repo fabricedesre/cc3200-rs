@@ -15,6 +15,8 @@ extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
 extern crate freertos_alloc;
+#[macro_use]
+extern crate log;
 
 use cc3200::cc3200::{Board, Console, Utils, LedEnum, LedName};
 
@@ -37,7 +39,7 @@ pub fn start() -> ! {
 
     Console::init_term();
     Console::clear_term();
-    println!("Welcome to CC3200 blinking leds version {}", VERSION);
+    info!("Welcome to CC3200 blinking leds version {}", VERSION);
 
     Board::test();
 
