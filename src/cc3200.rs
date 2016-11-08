@@ -107,6 +107,44 @@ impl Console {
         }
     }
 
+    pub fn getchar() -> char {
+        let ch;
+        unsafe {
+            ch = cc3200_sys::console_getchar() as u8;
+        }
+        let ascii_char = {
+            if ch as char > '\x7f' { '?' } else { ch as char }
+        };
+        return ascii_char;
+    }
+
+    pub fn getdelim(delim: char, buf: &mut str) -> &str {
+        let mut len = 0;
+        let len_avail = buf.len();
+        let ptr = buf.as_ptr() as *mut char;
+        while len < len_avail {
+            let i = len as isize;
+            let ascii_char = Console::getchar();
+            if ascii_char == delim {
+                unsafe {
+                    *ptr.offset(i) = '\0';
+                }
+                break;
+            }
+            unsafe {
+                *ptr.offset(i) = ascii_char;
+            }
+            len += 1;
+        }
+        unsafe {
+            return buf.slice_unchecked(0, len);
+        }
+    }
+
+    pub fn getline(buf: &mut str) -> &str {
+        return Console::getdelim('\n', buf);
+    }
+
     pub fn message(msg: &str) {
         for char in msg.chars() {
             // Lossy converstion from unicode to ASCII
