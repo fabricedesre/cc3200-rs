@@ -140,6 +140,16 @@ void board_init(void) {
     // Now we can do println!
 }
 
+int console_haschar(void)
+{
+    return !!MAP_UARTCharsAvail(CONSOLE);
+}
+
+int console_getchar(void)
+{
+    return MAP_UARTCharGet(CONSOLE);
+}
+
 void console_putchar(char ch) {
     if (ch == '\n') {
         MAP_UARTCharPut(CONSOLE, '\r');
