@@ -133,6 +133,11 @@ void board_init(void) {
     // Configure PIN_57 (GPIO2) for UART0 UART0_RX
     //
     MAP_PinTypeUART(PIN_57, PIN_MODE_3);
+
+    InitTerm();
+    ClearTerm();
+
+    // Now we can do println!
 }
 
 void console_putchar(char ch) {
