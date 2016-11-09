@@ -18,11 +18,11 @@ extern crate freertos_alloc;
 #[macro_use]
 extern crate log;
 
-use cc3200::cc3200::{Board, Utils, I2C, I2COpenMode};
+use cc3200::cc3200::{Board, I2C, I2COpenMode};
 use cc3200::i2c_devices::TemperatureSensor;
 use cc3200::tmp006::TMP006;
 
-use freertos_rs::Task;
+use freertos_rs::{CurrentTask, Duration, Task};
 
 static VERSION: &'static str = "1.0";
 
@@ -49,7 +49,7 @@ pub fn start() -> ! {
                 debug!("Temperature sensor initialized...");
                 loop {
                     info!("Current temperature is {:.*} C", 1, temp_sensor.get_temperature().unwrap());
-                    Utils::delay(1333333 * 6);
+                    CurrentTask::delay(Duration::ms(1000))
                 }
             })
             .unwrap()
