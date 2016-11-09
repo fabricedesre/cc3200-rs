@@ -18,7 +18,7 @@ extern crate freertos_alloc;
 #[macro_use]
 extern crate log;
 
-use cc3200::cc3200::{Board, Console, Utils, LedEnum, LedName};
+use cc3200::cc3200::{Board, Console, LedEnum, LedName};
 
 use alloc::arc::Arc;
 use freertos_rs::{CurrentTask, Duration, Task, Queue};
@@ -51,9 +51,9 @@ pub fn start() -> ! {
                 loop {
                     for msg in msgs.iter() {
                         queue.send(msg, Duration::ms(15)).unwrap();
-                        CurrentTask::delay(Duration::ms(15))
+                        CurrentTask::delay(Duration::ms(15));
                     }
-                    CurrentTask::delay(Duration::ms(1000))
+                    CurrentTask::delay(Duration::ms(1000));
                 }
             })
             .unwrap()
@@ -82,13 +82,13 @@ pub fn start() -> ! {
                 Board::led_off(LedName::MCU_ALL_LED_IND);
                 loop {
                     Board::led_on(LedName::MCU_RED_LED_GPIO);
-                    Utils::delay(1333333);
+                    CurrentTask::delay(Duration::ms(100));
                     Board::led_off(LedName::MCU_RED_LED_GPIO);
-                    Utils::delay(1333333);
+                    CurrentTask::delay(Duration::ms(100));
                     Board::led_on(LedName::MCU_RED_LED_GPIO);
-                    Utils::delay(1333333);
+                    CurrentTask::delay(Duration::ms(100));
                     Board::led_off(LedName::MCU_RED_LED_GPIO);
-                    Utils::delay(1333333 * 7);
+                    CurrentTask::delay(Duration::ms(700));
                 }
             })
             .unwrap()
