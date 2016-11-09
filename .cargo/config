@@ -3,4 +3,6 @@ rustflags = [
   "-C", "link-arg=-Tlayout.ld",
   "-C", "link-arg=-nostartfiles",
   "-C", "link-arg=-Wl,-Map=firmware.map",
+  "-C", "target-cpu=cortex-m4",
+  "-C", "target-feature=+soft-float",
 ]

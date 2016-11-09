@@ -80,28 +80,15 @@ pub fn start() -> ! {
             .start(|| {
                 Board::led_configure(&[LedEnum::LED1, LedEnum::LED2, LedEnum::LED3]);
                 Board::led_off(LedName::MCU_ALL_LED_IND);
-                let mut counter = 0;
                 loop {
                     Board::led_on(LedName::MCU_RED_LED_GPIO);
-                    if counter & 1 != 0 {
-                        Board::led_on(LedName::MCU_ORANGE_LED_GPIO);
-                    } else {
-                        Board::led_off(LedName::MCU_ORANGE_LED_GPIO);
-                    }
-                    if counter & 2 != 0 {
-                        Board::led_on(LedName::MCU_GREEN_LED_GPIO);
-                    } else {
-                        Board::led_off(LedName::MCU_GREEN_LED_GPIO);
-                    }
                     Utils::delay(1333333);
                     Board::led_off(LedName::MCU_RED_LED_GPIO);
                     Utils::delay(1333333);
                     Board::led_on(LedName::MCU_RED_LED_GPIO);
                     Utils::delay(1333333);
                     Board::led_off(LedName::MCU_RED_LED_GPIO);
-                    Utils::delay(1333333 * 6);
-
-                    counter += 1;
+                    Utils::delay(1333333 * 7);
                 }
             })
             .unwrap()

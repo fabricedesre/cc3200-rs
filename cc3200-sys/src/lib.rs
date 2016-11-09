@@ -24,9 +24,21 @@ extern "C" {
     pub fn ClearTerm();
     pub fn InitTerm();
 
-    // From sdk/examples/common/utils.c
+    // From sdk/driverlib/utils.c
     pub fn UtilsDelay(loops: u32);
 
     // From FreeRTOS tasks.c
     pub fn vTaskStartScheduler();
+
+    // From sdk/examples/common/i2c_if.c
+    pub fn I2C_IF_Open(mode: u32) -> i32;
+    pub fn I2C_IF_Close() -> i32;
+    pub fn I2C_IF_Write(ucDevAddr: u8, pucData: *mut u8, ucLen: u8, ucStop: u8) -> i32;
+    pub fn I2C_IF_Read(ucDevAddr: u8, pucData: *mut u8, ucLen: u8) -> i32;
+    pub fn I2C_IF_ReadFrom(ucDevAddr: u8,
+                           pucWrDataBuf: *mut u8,
+                           ucWrLen: u8,
+                           pucRdDataBuf: *mut u8,
+                           ucRdLen: u8)
+                           -> i32;
 }
