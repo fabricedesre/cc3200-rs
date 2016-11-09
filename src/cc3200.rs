@@ -60,10 +60,10 @@ pub struct Board { }
 
 impl Board {
     pub fn init() {
-        SimpleLogger::init().unwrap();
         unsafe {
             board_init();
         }
+        SimpleLogger::init().unwrap();
     }
 
     pub fn test() {

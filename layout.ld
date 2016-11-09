@@ -21,33 +21,34 @@ SECTIONS
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(8);
     _etext = .;
- } > RAM
-
-  __init_data = .;
-
-  .data : AT(__init_data)
-  {
-      _data = .;
-      *(.data*)
-      . = ALIGN (8);
-      _edata = .;
-  } > RAM
-
-  .bss :
-  {
-      _bss = .;
-      _stack = .;
-      . = . + 2048;
-      _estack = .;
-      *(.bss*)
-      *(COMMON)
-      _ebss = .;
   } > RAM
 
   ARM : {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
+  } > RAM
+
+
+  __init_data = .;
+
+  .data : AT(__init_data)
+  {
+    _data = .;
+    *(.data*)
+    . = ALIGN (8);
+    _edata = .;
+  } > RAM
+
+  .bss :
+  {
+    _bss = .;
+    _stack = .;
+    . = . + 4096;
+    _estack = .;
+    *(.bss*)
+    *(COMMON)
+    _ebss = .;
   } > RAM
 
   /DISCARD/ :

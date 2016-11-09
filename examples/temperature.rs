@@ -37,8 +37,6 @@ pub fn start() -> ! {
 
     Board::init();
 
-    Console::init_term();
-    Console::clear_term();
     info!("Welcome to CC3200 temperature sensor version {}", VERSION);
 
     let _temp = {

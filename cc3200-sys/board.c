@@ -144,6 +144,9 @@ void board_init(void) {
     // Configure PIN_02 for I2C0 I2C_SDA
     //
     MAP_PinTypeI2C(PIN_02, PIN_MODE_1);
+
+    InitTerm();
+    ClearTerm();
 }
 
 void console_putchar(char ch) {

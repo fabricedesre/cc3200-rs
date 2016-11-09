@@ -25,8 +25,11 @@ pub mod isr_vectors;
 
 pub mod intrinsics;
 
-#[link(name = "m")] extern {} // for pow
-#[link(name = "c")] extern {} // for __erno
+// We need to make sure that we pull in soft float versions of libm.a, libc.a
+// and libgcc.a, so these have been moved to .cargo/config in order to ensure
+// that -L comes before the -l option for the library.
+//#[link(name = "m")] extern {} // for pow
+//#[link(name = "c")] extern {} // for __erno
 //#[link(name = "gcc")] extern {}
 
 // These functions are used by the compiler, but are normally provided by libstd.
