@@ -2,9 +2,14 @@
 name = "cc3200"
 version = "0.1.0"
 authors = ["Fabrice Desré <fabrice@desre.org>"]
+build = "build.rs"
 
 [lib]
 name = "cc3200"
+
+# [dependencies.compiler_builtins]
+# git = "https://github.com/japaric/compiler-builtins.git"
+# features = ["c"]
 
 [dependencies]
 cc3200-sys = { path = "cc3200-sys" }

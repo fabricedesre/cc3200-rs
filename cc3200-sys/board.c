@@ -85,6 +85,8 @@ void isr_reset(void)
     start();
 }
 
+#define USE_I2C     1
+
 void board_init(void) {
 
     // Initialize the vector table
@@ -105,6 +107,7 @@ void board_init(void) {
     //
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralClkEnable(PRCM_I2CA0, PRCM_RUN_MODE_CLK);
 
     //
     // Configure PIN_64 (GPIO9) for GPIOOutput - RED LED
@@ -112,6 +115,17 @@ void board_init(void) {
     MAP_PinTypeGPIO(PIN_64, PIN_MODE_0, false);
     MAP_GPIODirModeSet(GPIOA1_BASE, 0x2, GPIO_DIR_MODE_OUT);
 
+#if USE_I2C
+    //
+    // Configure PIN_01 for I2C0 I2C_SCL
+    //
+    MAP_PinTypeI2C(PIN_01, PIN_MODE_1);
+
+    //
+    // Configure PIN_02 for I2C0 I2C_SDA
+    //
+    MAP_PinTypeI2C(PIN_02, PIN_MODE_1);
+#else
     //
     // Configure PIN_01 (GPIO10) for GPIOOutput - ORANGE LED
     //
@@ -123,6 +137,7 @@ void board_init(void) {
     //
     MAP_PinTypeGPIO(PIN_02, PIN_MODE_0, false);
     MAP_GPIODirModeSet(GPIOA1_BASE, 0x8, GPIO_DIR_MODE_OUT);
+#endif
 
     //
     // Configure PIN_55 (GPIO1) for UART0 UART0_TX
@@ -136,8 +151,6 @@ void board_init(void) {
 
     InitTerm();
     ClearTerm();
-
-    // Now we can do println!
 }
 
 void console_putchar(char ch) {
@@ -199,6 +212,7 @@ vApplicationIdleHook( void)
     //Handle Idle Hook for Profiling, Power Management etc
 }
 
+#if 0
 #define likely(x) __builtin_expect((x), 1)
 
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -235,8 +249,7 @@ void *memcpy(void *dst, const void *src, size_t n) {
 
     return dst;
 }
-
-void __aeabi_memcpy(void *dest, const void *source, size_t n) __attribute__((alias ("memcpy")));
+#endif
 
 void *memset(void *s, int c, size_t n) {
     if (c == 0 && ((uintptr_t)s & 3) == 0) {
