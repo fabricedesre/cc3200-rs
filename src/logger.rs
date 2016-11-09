@@ -50,7 +50,6 @@ impl log::Log for SimpleLogger {
 
 impl SimpleLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        println!("Logger level is {}", MAX_LOG_LEVEL);
         unsafe {
             log::set_logger_raw(|max_log_level| {
                 max_log_level.set(MAX_LOG_LEVEL);
