@@ -1,10 +1,5 @@
 [target.thumbv7em-none-eabi]
 rustflags = [
-  "-C", "link-arg=-L/usr/lib/arm-none-eabi/lib/armv7e-m",
-  "-C", "link-arg=-lm",
-  "-C", "link-arg=-lc",
-  "-C", "link-arg=-L/usr/lib/gcc/arm-none-eabi/4.9.3/armv7e-m",
-  "-C", "link-arg=-lgcc",
   "-C", "link-arg=-Tlayout.ld",
   "-C", "link-arg=-nostartfiles",
   "-C", "link-arg=-Wl,-Map=firmware.map",

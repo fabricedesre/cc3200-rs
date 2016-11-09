@@ -18,7 +18,7 @@ extern crate freertos_alloc;
 #[macro_use]
 extern crate log;
 
-use cc3200::cc3200::{Board, Console, Utils, I2C, I2COpenMode};
+use cc3200::cc3200::{Board, Utils, I2C, I2COpenMode};
 use cc3200::i2c_devices::{TMP006, TemperatureSensor};
 
 use freertos_rs::Task;
