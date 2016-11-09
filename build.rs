@@ -1,11 +1,9 @@
+extern crate common_build;
+
 use std::path::Path;
-use std::process::Command;
 
 fn get_lib(opt: &str) -> String {
-    let libgcc = Command::new("arm-none-eabi-gcc")
-        .arg("-mthumb")
-        .arg("-mcpu=cortex-m4")
-        .arg("-mfloat-abi=soft")
+    let libgcc = common_build::gcc_config().get_compiler().to_command()
         .arg(opt)
         .output()
         .unwrap();

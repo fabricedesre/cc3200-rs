@@ -1,0 +1,7 @@
+[package]
+name = "common-build"
+version = "0.1.0"
+authors = ["Dave Hylands <dhylands@gmail.com>"]
+
+[dependencies]
+gcc = "0.3"

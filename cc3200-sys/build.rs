@@ -1,9 +1,6 @@
-extern crate gcc;
+extern crate common_build;
 fn main() {
-    gcc::Config::new()
-        .compiler("arm-none-eabi-gcc")
-        .define("gcc", None)
-        .define("USE_FREERTOS", None)
+    common_build::gcc_config()
         .include(".")
         .include("sdk")
         .include("sdk/inc")
@@ -12,10 +9,6 @@ fn main() {
         .include("sdk/oslib")
         .include("sdk/third_party/FreeRTOS/source/include")
         .include("sdk/third_party/FreeRTOS/source/portable/GCC/ARM_CM4")
-        .flag("-std=c99")
-        .flag("-mthumb")
-        .flag("-mcpu=cortex-m4")
-        .flag("-mfloat-abi=soft")
         .file("board.c")
         .file("StrPrintf.c")
         .file("freertos_rs.c")
