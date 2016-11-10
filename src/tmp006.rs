@@ -34,13 +34,13 @@ impl TMP006 {
     }
 
     fn init(&self) -> bool {
-        if let Ok(manufac_id) = self.sensor.get_register_value16::<u16>(TMP006_MANUFAC_ID_REG_ADDR) {
+        if let Ok(manufac_id) = self.sensor.get_register_value::<u16>(TMP006_MANUFAC_ID_REG_ADDR) {
             if manufac_id != TMP006_MANUFAC_ID {
                 return false;
             }
 
             if let Ok(device_id) = self.sensor
-                .get_register_value16::<u16>(TMP006_DEVICE_ID_REG_ADDR) {
+                .get_register_value::<u16>(TMP006_DEVICE_ID_REG_ADDR) {
                 if device_id == TMP006_DEVICE_ID {
                     return true;
                 }
@@ -79,9 +79,9 @@ impl TMP006 {
 
 impl TemperatureSensor for TMP006 {
     fn get_temperature(&self) -> Option<f64> {
-        if let Ok(vobject) = self.sensor.get_register_value16::<i16>(TMP006_VOBJECT_REG_ADDR) {
+        if let Ok(vobject) = self.sensor.get_register_value::<i16>(TMP006_VOBJECT_REG_ADDR) {
             if let Ok(ambient_temp) = self.sensor
-                .get_register_value16::<u16>(TMP006_TAMBIENT_REG_ADDR) {
+                .get_register_value::<u16>(TMP006_TAMBIENT_REG_ADDR) {
                 return Some(TMP006::compute_temp((vobject as f64) * 156.25e-9,
                                                  (ambient_temp as f64) / 128.0));
             }

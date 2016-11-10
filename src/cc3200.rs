@@ -203,7 +203,7 @@ impl I2C {
         return Err(());
     }
 
-    pub fn read_from(&self, addr: u8, wr_data: &[u8], rd_data: &mut [u8]) -> Result<(), ()> {
+    pub fn read_from_with_length(&self, addr: u8, wr_data: &[u8], rd_data: &mut [u8], rd_len: u8) -> Result<(), ()> {
         if wr_data.len() > 255 || rd_data.len() > 255 {
             return Err(());
         }
@@ -212,11 +212,16 @@ impl I2C {
                                wr_data.as_ptr() as *mut u8,
                                wr_data.len() as u8,
                                rd_data.as_ptr() as *mut u8,
-                               rd_data.len() as u8) == I2C_SUCCESS {
+                               rd_len) == I2C_SUCCESS {
                 return Ok(());
             }
         }
         return Err(());
+    }
+
+    pub fn read_from(&self, addr: u8, wr_data: &[u8], rd_data: &mut [u8]) -> Result<(), ()> {
+        let len = rd_data.len() as u8;
+        self.read_from_with_length(addr, wr_data, rd_data, len)
     }
 }
 
