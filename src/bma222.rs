@@ -13,11 +13,13 @@ static BMA222_CHID_ID_REG: u8 = 0x00;
 static BMA222_CHID_ID_VALUE: u8 = 0xf8;
 
 static BMA222_ACC_DATA_X_NEW: u8 = 0x2;
-static BMA222_ACC_DATA_X: u8 = 0x3;
-static BMA222_ACC_DATA_Y_NEW: u8 = 0x4;
-static BMA222_ACC_DATA_Y: u8 = 0x5;
-static BMA222_ACC_DATA_Z_NEW: u8 = 0x6;
-static BMA222_ACC_DATA_Z: u8 = 0x7;
+
+// Other registers to directly access data:
+// static BMA222_ACC_DATA_X: u8 = 0x3;
+// static BMA222_ACC_DATA_Y_NEW: u8 = 0x4;
+// static BMA222_ACC_DATA_Y: u8 = 0x5;
+// static BMA222_ACC_DATA_Z_NEW: u8 = 0x6;
+// static BMA222_ACC_DATA_Z: u8 = 0x7;
 
 pub struct BMA222 {
     sensor: I2CDevice,
@@ -39,7 +41,7 @@ impl BMA222 {
     }
 
     fn init(&self) -> bool {
-        if let Ok(chip_id) = self.sensor.get_register_value8::<u8>(BMA222_CHID_ID_REG) {
+        if let Ok(chip_id) = self.sensor.get_register_value::<u8>(BMA222_CHID_ID_REG) {
             info!("chip_id={:x}", chip_id);
             return chip_id == BMA222_CHID_ID_VALUE;
         }

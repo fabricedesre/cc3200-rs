@@ -9,34 +9,51 @@ pub struct I2CDevice {
     pub dev_addr: u8,
 }
 
-pub trait Converter16 {
-    fn convert(input: [u8; 2]) -> Self;
+// Array of the max length we support.
+type I2cArray = [u8; 2];
+
+// Helper trait to convert a byte array into a primitive type.
+pub trait Converter {
+    fn convert16(input: I2cArray) -> Self;
+    fn convert8(input: I2cArray) -> Self;
 }
 
-impl Converter16 for u16 {
-    fn convert(input: [u8; 2]) -> u16 {
+impl Converter for u16 {
+    fn convert16(input: I2cArray) -> Self {
         (input[0] as u16) << 8 | (input[1] as u16)
     }
-}
 
-impl Converter16 for i16 {
-    fn convert(input: [u8; 2]) -> i16 {
-        (input[0] as i16) << 8 | (input[1] as i16) as i16
+    fn convert8(_: I2cArray) -> Self {
+        unimplemented!();
     }
 }
 
-pub trait Converter8 {
-    fn convert(input: [u8; 1]) -> Self;
+impl Converter for i16 {
+    fn convert16(input: I2cArray) -> Self {
+        (input[0] as i16) << 8 | (input[1] as i16) as i16
+    }
+
+    fn convert8(_: I2cArray) -> Self {
+        unimplemented!();
+    }
 }
 
-impl Converter8 for u8 {
-    fn convert(input: [u8; 1]) -> u8 {
+impl Converter for u8 {
+    fn convert16(_: I2cArray) -> Self {
+        unimplemented!();
+    }
+
+    fn convert8(input: I2cArray) -> Self {
         input[0]
     }
 }
 
-impl Converter8 for i8 {
-    fn convert(input: [u8; 1]) -> i8 {
+impl Converter for i8 {
+    fn convert16(_: I2cArray) -> Self {
+        unimplemented!();
+    }
+
+    fn convert8(input: I2cArray) -> Self {
         input[0] as i8
     }
 }
@@ -49,27 +66,23 @@ impl I2CDevice {
         }
     }
 
-    pub fn get_register_value16<T: Converter16>(&self, addr: u8) -> Result<T, ()> {
+    // Retrieves a value from the register at addr.
+    // Supported value types are 8 & 16 bits signed or unsigned integers.
+    pub fn get_register_value<T: Converter>(&self, addr: u8) -> Result<T, ()> {
+        use core::intrinsics::size_of;
+
         let inp: [u8; 1] = [addr];
-        let mut out: [u8; 2] = [0; 2];
+        let mut out: I2cArray = [0; 2];
 
-        match self.i2c.read_from(self.dev_addr, &inp, &mut out) {
+        let type_size = unsafe { size_of::<T>() };
+        match self.i2c.read_from_with_length(self.dev_addr, &inp, &mut out, type_size as u8) {
             Ok(_) => {
-                return Ok(T::convert(out));
-            }
-            Err(_) => {
-                return Err(());
-            }
-        }
-    }
+                match type_size {
+                    1 => return Ok(T::convert8(out)),
+                    2 => return Ok(T::convert16(out)),
+                    _ => return Err(()),
+                }
 
-    pub fn get_register_value8<T: Converter8>(&self, addr: u8) -> Result<T, ()> {
-        let inp: [u8; 1] = [addr];
-        let mut out: [u8; 1] = [0];
-
-        match self.i2c.read_from(self.dev_addr, &inp, &mut out) {
-            Ok(_) => {
-                return Ok(T::convert(out));
             }
             Err(_) => {
                 return Err(());
