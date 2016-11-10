@@ -22,6 +22,8 @@ pub mod logger;
 pub mod cc3200;
 pub mod i2c_devices;
 pub mod isr_vectors;
+
+pub mod bma222;
 pub mod tmp006;
 
 // We need to make sure that we pull in soft float versions of libm.a, libc.a
