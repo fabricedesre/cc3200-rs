@@ -22,6 +22,9 @@
 
 #include "StrPrintf.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 extern void (* const ISR_VECTORS[])(void);
 extern uint32_t _bss;
 extern uint32_t _ebss;
@@ -183,6 +186,14 @@ int console_printf(const char *fmt, ...) {
 
 void board_test(void) {
     console_printf("Test: %d, %s\n", 42, "string");
+}
+
+uint32_t get_stack_high_water_mark() {
+    TaskHandle_t current = xTaskGetCurrentTaskHandle();
+    if (current) {
+        return uxTaskGetStackHighWaterMark(current) * sizeof(StackType_t);
+    }
+    return 0;
 }
 
 void vApplicationMallocFailedHook()
