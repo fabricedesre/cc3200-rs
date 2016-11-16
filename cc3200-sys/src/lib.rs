@@ -12,7 +12,9 @@ extern "C" {
     // From board.c
     pub fn board_init();
     pub fn board_test();
+    pub fn get_stack_high_water_mark() -> u32;
     pub fn console_putchar(char: i8);
+    pub fn console_printf(fmt: *const i8, ...);
     pub fn reset();
 
     // From sdk/examples/common/gpio_if.c

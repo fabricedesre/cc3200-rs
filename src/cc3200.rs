@@ -72,6 +72,18 @@ impl Board {
         }
     }
 
+    pub fn get_stack_high_water_mark() -> u32 {
+        unsafe {
+            cc3200_sys::get_stack_high_water_mark()
+        }
+    }
+
+    pub fn console_printf_1_u32(fmt: &str, arg1: u32) {
+        unsafe {
+            cc3200_sys::console_printf(fmt.as_bytes() as *const _ as *const i8, arg1);
+        }
+    }
+
     pub fn led_configure(leds: &[LedEnum]) {
         let mut val = LedEnum::NO_LED as u8;
         for led in leds {
