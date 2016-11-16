@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "board.h"
 
@@ -179,6 +180,52 @@ int console_printf(const char *fmt, ...) {
     int rc = vStrXPrintf(strxprintf_func, NULL, fmt, args);
     va_end(args);
     return rc;
+}
+
+void format_float_into(char *str, uint32_t max_len, double num, uint32_t digits_after_decimal) {
+    if (max_len <= 4) {
+        // We need to allow for a sign, a decimal and at least one digit before
+        // and after the decimal point.
+        snprintf_into(str, max_len, "****");
+        return;
+    }
+
+    int num_before_decimal;
+    unsigned num_after_decimal;
+    int digits_before_decimal;
+
+    int factor = 1;
+    for (int i = 0; i < digits_after_decimal; i++) {
+        factor *= 10;
+    }
+    num *= factor;
+    if (num < 0) {
+        num -= 0.5;
+    } else {
+        num += 0.5;
+    }
+    int num_as_int = (int)num;
+
+    num_before_decimal = num_as_int / factor;
+    num_after_decimal = abs(num_as_int) % factor;
+
+    if (digits_after_decimal > (max_len - 2)) {
+        // Need room for sign and single digit before decimal point.
+        digits_after_decimal = max_len - 2;
+    }
+    digits_before_decimal = max_len - digits_after_decimal - 1; // -1 for decimal point
+
+    if (num_as_int < 0 && num_as_int > -factor) {
+        // numbers between 0 and -1 need to be treated specially since we need
+        // to have num_before_decimal be -0
+        snprintf_into(str, max_len, "%*s.%0*u",
+                      digits_before_decimal, "-0",
+                      digits_after_decimal, num_after_decimal);
+    } else {
+        snprintf_into(str, max_len, "%*d.%0*u",
+                      digits_before_decimal, num_before_decimal,
+                      digits_after_decimal, num_after_decimal);
+    }
 }
 
 void board_test(void) {

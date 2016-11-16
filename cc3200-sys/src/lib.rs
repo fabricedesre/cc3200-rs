@@ -19,6 +19,7 @@ extern "C" {
     // From board.c
     pub fn board_init();
     pub fn board_test();
+    pub fn format_float_into(buf: *mut i8, buf_len: u32, num: f64, digits_after_decimal: u32);
     pub fn console_putchar(char: i8);
     pub fn reset();
 

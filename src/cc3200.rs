@@ -75,6 +75,12 @@ impl Board {
         }
     }
 
+    pub fn format_float_into(buf: &mut [u8], num: f64, digits_after_decimal: u32) {
+        unsafe {
+            cc3200_sys::format_float_into(buf.as_mut_ptr() as *mut i8, buf.len() as u32, num, digits_after_decimal);
+        }
+    }
+
     pub fn led_configure(leds: &[LedEnum]) {
         let mut val = LedEnum::NO_LED as u8;
         for led in leds {
