@@ -198,7 +198,7 @@ void vApplicationMallocFailedHook()
 void vApplicationStackOverflowHook( void *pxTask,
                                    signed char *pcTaskName)
 {
-    console_puts("vApplicationStackOverflowHook\n");
+    console_printf("vApplicationStackOverflowHook for task '%s'\n", pcTaskName);
 
     //Handle FreeRTOS Stack Overflow
     while(1)

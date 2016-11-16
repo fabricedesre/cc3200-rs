@@ -5,6 +5,8 @@
 extern crate cc3200_sys;
 
 use core;
+use core::result::Result;
+
 use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_LedOff,
                        MAP_UtilsDelay, I2C_IF_Open, I2C_IF_Close, I2C_IF_Write, I2C_IF_Read,
                        I2C_IF_ReadFrom};
@@ -23,6 +25,7 @@ macro_rules! print {
        }
    }
 }
+
 
 #[macro_export]
 macro_rules! println {

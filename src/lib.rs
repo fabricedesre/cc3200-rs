@@ -9,6 +9,8 @@
 #![feature(asm, lang_items)]
 // For i2c_devices pow functions.
 #![feature(core_intrinsics)]
+#![feature(collections)]
+#![feature(try_from)]
 
 // #![feature(compiler_builtins_lib)]
 // extern crate compiler_builtins;
@@ -18,6 +20,10 @@ extern crate cc3200_sys;
 extern crate log;
 
 #[macro_use]
+extern crate collections;
+
+
+#[macro_use]
 pub mod logger;
 pub mod cc3200;
 pub mod i2c_devices;
@@ -25,6 +31,9 @@ pub mod isr_vectors;
 
 pub mod bma222;
 pub mod tmp006;
+
+pub mod simplelink;
+pub mod config; // SSID and password currently set here
 
 // We need to make sure that we pull in soft float versions of libm.a, libc.a
 // and libgcc.a. The build.rs sets up the paths needed for these.
