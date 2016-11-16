@@ -42,6 +42,7 @@ fn test4() {
     println!("{}.{}.{}.{}", 1, 2, 3, 4);
 }
 
+/*
 fn test1f() {
     let num1: f64 = 1.2;
     println!("{:.1}", num1);
@@ -67,6 +68,25 @@ fn test4f() {
     let num4: f64 = 7.8;
     println!("{:.1} {:.1} {:.1} {:1}", num1, num2, num3, num4);
 }
+*/
+
+fn test1f2() {
+    let num1: f64 = 1.234;
+    println!("{:.*}", 2, num1);
+}
+
+fn test2f2() {
+    let num1: f64 = 1.234;
+    let num2: f64 = 2.345;
+    println!("{:.*} {:.*}", 2, num1, 2, num2);
+}
+
+fn test3f2() {
+    let num1: f64 = 1.234;
+    let num2: f64 = 2.345;
+    let num3: f64 = 3.456;
+    println!("{:.*} {:.*} {:.*}", 2, num1, 2, num2, 2, num3);
+}
 
 fn test_main() {
     let base = Board::get_stack_high_water_mark();
@@ -82,14 +102,16 @@ fn test_main() {
     let int_3_usage = Board::get_stack_high_water_mark();
     test4();
     let int_4_usage = Board::get_stack_high_water_mark();
-    test1f();
+    test1f2();
     let float_1_usage = Board::get_stack_high_water_mark();
-    test2f();
+    test2f2();
     let float_2_usage = Board::get_stack_high_water_mark();
-    test3f();
+    test3f2();
     let float_3_usage = Board::get_stack_high_water_mark();
+    /*
     test4f();
     let float_4_usage = Board::get_stack_high_water_mark();
+    */
 
     Board::console_printf_1_u32("    null: %5lu\n", (base - null_usage) as u32);
     Board::console_printf_1_u32("println!: %5lu\n", (null_usage - println_usage) as u32);
@@ -100,7 +122,7 @@ fn test_main() {
     Board::console_printf_1_u32(" float 1: %5lu\n", (println_usage - float_1_usage) as u32);
     Board::console_printf_1_u32(" float 2: %5lu\n", (float_1_usage - float_2_usage) as u32);
     Board::console_printf_1_u32(" float 3: %5lu\n", (float_2_usage - float_3_usage) as u32);
-    Board::console_printf_1_u32(" float 4: %5lu\n", (float_3_usage - float_4_usage) as u32);
+//    Board::console_printf_1_u32(" float 4: %5lu\n", (float_3_usage - float_4_usage) as u32);
 }
 
 // Conceptually, this is our program "entry point". It's the first thing the microcontroller will
