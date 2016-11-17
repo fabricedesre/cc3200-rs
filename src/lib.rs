@@ -22,6 +22,7 @@ extern crate log;
 #[macro_use]
 extern crate collections;
 
+extern crate smallhttp;
 
 #[macro_use]
 pub mod logger;
@@ -33,6 +34,7 @@ pub mod bma222;
 pub mod tmp006;
 
 pub mod simplelink;
+pub mod socket_channel;
 pub mod config; // SSID and password currently set here
 
 // We need to make sure that we pull in soft float versions of libm.a, libc.a
