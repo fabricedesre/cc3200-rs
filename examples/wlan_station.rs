@@ -96,7 +96,7 @@ fn configure_simple_link_to_default() -> Result<(), Error> {
              ver.fw_version[0], ver.fw_version[1], ver.fw_version[2], ver.fw_version[3],
              ver.phy_version[0], ver.phy_version[1], ver.phy_version[2], ver.phy_version[3]);
 
-    // Set connection policy to Auto + SmartConfig 
+    // Set connection policy to Auto + SmartConfig
     //      (Device's default connection policy)
     try!(SimpleLink::wlan_set_policy(Policy::ConnectionDefault, &[]));
 
@@ -143,7 +143,8 @@ fn configure_simple_link_to_default() -> Result<(), Error> {
 fn wlan_connect() -> Result<(), Error> {
 
     let sec_params = config::security_params();
-    try!(SimpleLink::wlan_connect(config::SSID, &[], Some(&sec_params), None));
+
+    try!(SimpleLink::wlan_connect(config::SSID, &[], sec_params, None));
 
     println!("Connecting to {} ...", config::SSID);
     // Wait for WLAN event
@@ -229,7 +230,7 @@ fn wlan_station_mode() -> Result<(), Error> {
     Ok(())
 }
 
-fn http_client_demo() -> Result<(), Error> {
+fn wlan_station_demo() -> Result<(), Error> {
 
     Board::led_configure(&[LedEnum::LED1]);
 
@@ -262,9 +263,9 @@ pub fn start() -> ! {
             .name("client")
             .stack_size(2048) // 32-bit words
             .start(|| {
-                match http_client_demo() {
-                    Ok(())  => { println!("http_client_demo succeeded"); },
-                    Err(e)  => { println!("http_client_demo failed: {:?}", e); },
+                match wlan_station_demo() {
+                    Ok(())  => { println!("wlan_station_demo succeeded"); },
+                    Err(e)  => { println!("wlan_station_demo failed: {:?}", e); },
                 };
                 loop {}
             })
