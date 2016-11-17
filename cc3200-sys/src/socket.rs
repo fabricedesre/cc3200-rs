@@ -36,8 +36,8 @@ pub enum SocketType {
 
 #[repr(i16)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug)]
-pub enum Error {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum SocketError {
     SOC_ERROR = -1, // Failure.
     SOC_OK = 0, // Success.
     INEXE = -8, // socket command in execution
@@ -215,9 +215,9 @@ pub enum Error {
 pub type RawSocket = i16;
 
 // Casts a RawSocket into an Error to check the return value of sl_Socket.
-impl ::core::convert::Into<Error> for RawSocket {
-    fn into(self) -> Error {
-        unsafe { ::core::intrinsics::transmute::<RawSocket, Error>(self) }
+impl ::core::convert::Into<SocketError> for RawSocket {
+    fn into(self) -> SocketError {
+        unsafe { ::core::intrinsics::transmute::<RawSocket, SocketError>(self) }
     }
 }
 
@@ -225,13 +225,13 @@ impl ::core::convert::Into<Error> for RawSocket {
 pub type SizeOrError = i16;
 
 // Used to convert a SizeOf Error into a Result for functions like sl_Send
-impl ::core::convert::TryInto<Error> for SizeOrError {
+impl ::core::convert::TryInto<SocketError> for SizeOrError {
     type Err = ();
-    fn try_into(self) -> Result<Error, Self::Err> {
+    fn try_into(self) -> Result<SocketError, Self::Err> {
         if self >= 0 {
             return  Err(());
         }
-        Ok(unsafe { ::core::intrinsics::transmute::<SizeOrError, Error>(self) })
+        Ok(unsafe { ::core::intrinsics::transmute::<SizeOrError, SocketError>(self) })
     }
 }
 
@@ -258,6 +258,20 @@ impl ::core::default::Default for SlSockAddr_t {
     fn default() -> Self {
         unsafe { ::core::mem::zeroed() }
     }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+#[derive(Debug)]
+pub struct SlSockAddrIn_t {
+    pub sin_family: Family,
+    pub sin_port: u16,
+    pub sin_addr: u32, // ip address in network byte order.
+    pub sin_zero: [u8; 8usize],
+}
+
+impl ::core::default::Default for SlSockAddrIn_t {
+    fn default() -> Self { unsafe { ::core::mem::zeroed() } }
 }
 
 #[repr(C)]
@@ -325,6 +339,9 @@ pub enum OptionName {
 }
 
 extern "C" {
+    pub fn sl_Htonl(val: u32) -> u32;
+    pub fn sl_Htons(val: u16) -> u16;
+
     /// create an endpoint for communication
     ///
     /// The socket function creates a new socket of a certain socket type, identified
@@ -374,7 +391,7 @@ extern "C" {
     ///
     /// On success, zero is returned.
     /// On error, a negative number is returned.
-    pub fn sl_Close(socket: RawSocket) -> Error;
+    pub fn sl_Close(socket: RawSocket) -> SocketError;
 
     /// Initiate a connection on a socket
     ///
@@ -403,7 +420,7 @@ extern "C" {
     ///                     On failure, negative value.
     ///                        SL_POOL_IS_EMPTY may be return in case there are no resources in the system
     ///                          In this case try again later or increase MAX_CONCURRENT_ACTIONS
-    pub fn sl_Connect(socket: RawSocket, addr: *const SlSockAddr_t, addrlen: i16) -> Error;
+    pub fn sl_Connect(socket: RawSocket, addr: *const SlSockAddr_t, addrlen: i16) -> SocketError;
 
     /// set socket options
     ///
@@ -528,7 +545,7 @@ extern "C" {
                          optname: OptionName,
                          optval: *const u8,
                          optlen: SlSocklen_t)
-                         -> Error;
+                         -> SocketError;
 
     /// Get socket options
     ///
@@ -567,7 +584,7 @@ extern "C" {
                          optname: OptionName,
                          optval: *mut u8,
                          optlen: *mut SlSocklen_t)
-                         -> Error;
+                         -> SocketError;
 
     /// read data from TCP socket
     ///
@@ -632,7 +649,7 @@ extern "C" {
     /// addrlen          contains the size of the structure pointed to by addr
     ///
     ///                 On success, zero is returned. On error, a negative error code is returned.
-    pub fn sl_Bind(socket: RawSocket, addr: *const SlSockAddr_t, addrlen: i16) -> Error;
+    pub fn sl_Bind(socket: RawSocket, addr: *const SlSockAddr_t, addrlen: i16) -> SocketError;
 
     ///  listen for connections on a socket
     ///
@@ -647,7 +664,7 @@ extern "C" {
     /// backlog          specifies the listen queue depth.
     ///
     ///          On success, zero is returned. On error, a negative error code is returned.
-    pub fn sl_Listen(socket: RawSocket, backlog: i16) -> Error;
+    pub fn sl_Listen(socket: RawSocket, backlog: i16) -> SocketError;
 
     ///  Monitor socket activity
     ///

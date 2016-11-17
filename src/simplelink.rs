@@ -92,23 +92,36 @@ impl SimpleLink {
 
     pub fn netapp_get_host_by_name(name: &str) -> Result<u32, SimpleLinkError> {
         let mut out_ip_addr: u32 = 0;
-        try_wlan!(sl_NetAppDnsGetHostByName(name.as_ptr(), name.len() as u16, &mut out_ip_addr as *mut u32, SocketFamily::AF_INET as u8));
+        try_wlan!(sl_NetAppDnsGetHostByName(name.as_ptr(),
+                                            name.len() as u16,
+                                            &mut out_ip_addr as *mut u32,
+                                            SocketFamily::AF_INET as u8));
         Ok(out_ip_addr)
     }
 
     pub fn netapp_mdns_unregister_service(name: &str) -> Result<(), SimpleLinkError> {
         let name_len = name.len() as u8;
-        let name_ptr = { if name_len > 0 { name.as_ptr() } else { ptr::null() }};
+        let name_ptr = {
+            if name_len > 0 {
+                name.as_ptr()
+            } else {
+                ptr::null()
+            }
+        };
         try_wlan!(sl_NetAppMDNSUnRegisterService(name_ptr, name_len));
         Ok(())
     }
 
     pub fn netapp_ping_start(ping_params: &SlPingStartCommand,
-                            family: SocketFamily) -> Result<(), SimpleLinkError> {
+                             family: SocketFamily)
+                             -> Result<(), SimpleLinkError> {
         let params_ptr = ping_params as *const SlPingStartCommand;
 
         // Since we're provinding a callback, the ping_report parameter is ignored.
-        try_wlan!(sl_NetAppPingStart(params_ptr, family as u8, ptr::null_mut(), Some(SimpleLinkPingReport)));
+        try_wlan!(sl_NetAppPingStart(params_ptr,
+                                     family as u8,
+                                     ptr::null_mut(),
+                                     Some(SimpleLinkPingReport)));
         Ok(())
     }
 
@@ -128,14 +141,29 @@ impl SimpleLink {
         Ok(())
     }
 
-    pub fn wlan_connect(ssid: &str, mac_addr: &[u8], sec_params: Option<SlSecParams>, sec_params_ext: Option<SlSecParamsExt>) -> Result<(), SimpleLinkError> {
+    pub fn wlan_connect(ssid: &str,
+                        mac_addr: &[u8],
+                        sec_params: Option<SlSecParams>,
+                        sec_params_ext: Option<SlSecParamsExt>)
+                        -> Result<(), SimpleLinkError> {
         let ssid_ptr = ssid.as_ptr();
         let ssid_len = ssid.len() as i16;
         let mac_addr_len = mac_addr.len();
-        let mac_addr_ptr = if mac_addr_len > 0 { mac_addr.as_ptr() } else { ptr::null() as *const u8 };
-        let sec_params_ptr: *const SlSecParams = sec_params.map(|r| &r as *const SlSecParams).unwrap_or(ptr::null() as *const SlSecParams);
-        let sec_params_ext_ptr: *const SlSecParamsExt = sec_params_ext.map(|r| &r as *const SlSecParamsExt).unwrap_or(ptr::null() as *const SlSecParamsExt);
-        try_wlan!(sl_WlanConnect(ssid_ptr, ssid_len, mac_addr_ptr, sec_params_ptr, sec_params_ext_ptr));
+        let mac_addr_ptr = if mac_addr_len > 0 {
+            mac_addr.as_ptr()
+        } else {
+            ptr::null() as *const u8
+        };
+        let sec_params_ptr: *const SlSecParams = sec_params.map(|r| &r as *const SlSecParams)
+            .unwrap_or(ptr::null() as *const SlSecParams);
+        let sec_params_ext_ptr: *const SlSecParamsExt =
+            sec_params_ext.map(|r| &r as *const SlSecParamsExt)
+                .unwrap_or(ptr::null() as *const SlSecParamsExt);
+        try_wlan!(sl_WlanConnect(ssid_ptr,
+                                 ssid_len,
+                                 mac_addr_ptr,
+                                 sec_params_ptr,
+                                 sec_params_ext_ptr));
         Ok(())
     }
 
@@ -164,7 +192,9 @@ impl SimpleLink {
 
     // WLAN Rx Filter
 
-    pub fn wlan_rx_filter(op: WlanRxFilterOp, buf: &WlanRxFilterOpBuf) -> Result<(), SimpleLinkError> {
+    pub fn wlan_rx_filter(op: WlanRxFilterOp,
+                          buf: &WlanRxFilterOpBuf)
+                          -> Result<(), SimpleLinkError> {
         let buf_size = mem::size_of::<WlanRxFilterOpBuf>() as u16;
         let buf_ptr: *const u8 = buf as *const _ as *const u8;
         try_wlan!(sl_WlanRxFilterSet(op as u8, buf_ptr, buf_size));

@@ -29,8 +29,10 @@ use cc3200::config;
 use cc3200::cc3200::{Board, LedEnum, LedName};
 use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError,
                          WlanConfig, WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
+use cc3200::socket_channel::SocketChannel;
 
 use freertos_rs::{CurrentTask, Duration, Task};
+use smallhttp::Client;
 
 static VERSION: &'static str = "1.0";
 
@@ -169,6 +171,9 @@ fn wlan_station_mode() -> Result<(), Error> {
     println!("Connection established w/ AP and IP is aquired");
 
     println!("Will now send temperature to server...");
+
+    let mut client = Client::new(SocketChannel::new());
+
 
     Ok(())
 }
