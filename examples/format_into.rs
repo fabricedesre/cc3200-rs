@@ -46,9 +46,11 @@ fn test_int_fill(num: i32, fill: char) {
 
     let num_idx = buf_find(&buf, num_tmpl).unwrap();
 
-    format_int_into(&mut buf[num_idx..num_idx + num_tmpl.len()], num, fill);
-
-    println!("{}", String::from_utf8_lossy(&buf[0..tmpl.len()]));
+    if format_int_into(&mut buf[num_idx..num_idx + num_tmpl.len()], num, fill) {
+        println!("{}", String::from_utf8_lossy(&buf[0..tmpl.len()]));
+    } else {
+        println!("*** overflow ***");
+    }
 }
 
 fn test_int(num: i32) {
@@ -66,11 +68,13 @@ fn test_float(num: f64, digits_after_decimal: u32) {
 
     let num_idx = buf_find(&buf, num_tmpl).unwrap();
 
-    format_float_into(&mut buf[num_idx..num_idx + num_tmpl.len()],
-                      num,
-                      digits_after_decimal);
-
-    println!("{}", String::from_utf8_lossy(&buf[0..tmpl.len()]));
+    if format_float_into(&mut buf[num_idx..num_idx + num_tmpl.len()],
+                         num,
+                         digits_after_decimal) {
+        println!("{}", String::from_utf8_lossy(&buf[0..tmpl.len()]));
+    } else {
+        println!("*** overflow ***");
+    }
 }
 
 fn test_main() {

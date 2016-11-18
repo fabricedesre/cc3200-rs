@@ -12,10 +12,9 @@ pub fn fill_buf(buf: &mut [u8], fill_byte: u8) {
     }
 }
 
-pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) {
-    let mut overflow = false;
+pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) -> bool {
     if buf.len() < 1 {
-        return;
+        return false;
     }
 
     // Introduce a block so that we limit the lifetime of the borrow (of buf)
@@ -25,7 +24,13 @@ pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) {
         let mut abs_num = num.abs();
 
         // Write the digits into the buffer from right to left
-        let mut buf_iter = buf.iter_mut().rev();
+        let mut buf_iter = if num < 0 && fill != ' ' {
+            // If we're not using a space fill, then the sign will go in the
+            // very first column.
+            buf[1..].iter_mut().rev()
+        } else {
+            buf.iter_mut().rev()
+        };
         if abs_num == 0 {
             if let Some(ch) = buf_iter.next() {
                 *ch = b'0';
@@ -36,8 +41,7 @@ pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) {
                     *ch = digit[(abs_num % 10) as usize];
                     abs_num /= 10;
                 } else {
-                    overflow = true;
-                    break;
+                    return false;
                 }
             }
         }
@@ -48,7 +52,7 @@ pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) {
                 if let Some(ch) = buf_iter.next() {
                     *ch = b'-';
                 } else {
-                    overflow = true;
+                    return false;
                 }
             }
             // Space fill
@@ -63,21 +67,12 @@ pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) {
         }
     }
     if num < 0 && fill != ' ' {
-        // Special case for non-space fill and negative numbers. We'll
-        // overwrite the leftmost fill character with the sign.
-        if buf[0] == (fill as u8) {
-            buf[0] = b'-';
-        } else {
-            overflow = true;
-        }
+        buf[0] = b'-';
     }
-    if overflow {
-        // If we overflowed then fill the entire field with stars.
-        fill_buf(buf, b'*');
-    }
+    true
 }
 
-pub fn format_float_into(buf: &mut [u8], num: f64, digits_after_decimal: u32) {
+pub fn format_float_into(buf: &mut [u8], num: f64, digits_after_decimal: u32) -> bool {
     let buf_len = buf.len();
 
     let mut factor = 1;
@@ -98,31 +93,30 @@ pub fn format_float_into(buf: &mut [u8], num: f64, digits_after_decimal: u32) {
     let digits_after_decimal = min(buf_len - 2, digits_after_decimal as usize);
     let digits_before_decimal = buf_len - digits_after_decimal - 1; // -1 for decimal point
 
+    let mut ok = true;
     if num_as_int < 0 && num_as_int > -factor {
         // numbers between 0 and -1 need to be treated specially since we need
         // to have num_before_decimal be -0
-        format_int_into(&mut buf[0..digits_before_decimal], 0, ' ');
+        ok &= format_int_into(&mut buf[0..digits_before_decimal], 0, ' ');
         buf[digits_before_decimal - 2] = b'-';
     } else {
-        format_int_into(&mut buf[0..digits_before_decimal], num_before_decimal, ' ');
+        ok &= format_int_into(&mut buf[0..digits_before_decimal], num_before_decimal, ' ');
     }
-    if buf[0] == b'*' {
-        // Integer portion overflowed. Overflow the whole thing.
-        fill_buf(buf, b'*');
-    } else {
+    if ok {
         buf[digits_before_decimal] = b'.';
-        format_int_into(&mut buf[digits_before_decimal + 1..buf_len],
-                        num_after_decimal,
-                        '0');
+        ok &= format_int_into(&mut buf[digits_before_decimal + 1..buf_len],
+                              num_after_decimal,
+                              '0');
     }
+    ok
 }
 
 #[cfg(test)]
 mod test {
 
-    use ::*;
+    use ::{format_float_into, format_int_into};
 
-    fn format_int_into_ref(buf: &mut [u8], num: i32, fill: char) {
+    fn format_int_into_ref(buf: &mut [u8], num: i32, fill: char) -> bool {
 
         let s = if fill == '0' {
             format!("{:01$}", num, buf.len())
@@ -135,10 +129,10 @@ mod test {
         // The width parameter is a minimum, but our buffer is constrained.
         // So we copy the rightmost buf_len characters.
         if s_len > buf_len {
-            // Number didn't fit
-            fill_buf(buf, b'*');
+            false
         } else {
             buf.copy_from_slice(&(s.into_bytes())[0..buf_len]);
+            true
         }
     }
 
@@ -151,30 +145,37 @@ mod test {
         let mut ref_buf: [u8; 5] = [0; 5];
 
         for num in test_nums.iter() {
-            format_int_into(&mut int_buf[..], *num, ' ');
-            format_int_into_ref(&mut ref_buf[..], *num, ' ');
+            let ok1 = format_int_into(&mut int_buf[..], *num, ' ');
+            let ok2 = format_int_into_ref(&mut ref_buf[..], *num, ' ');
 
-            assert_eq!(int_buf, ref_buf);
+            assert_eq!(ok1, ok2);
+            if ok1 {
+                assert_eq!(int_buf, ref_buf);
+            }
         }
 
         for num in test_nums.iter() {
-            format_int_into(&mut int_buf[..], *num, '0');
-            format_int_into_ref(&mut ref_buf[..], *num, '0');
+            let ok1 = format_int_into(&mut int_buf[..], *num, '0');
+            let ok2 = format_int_into_ref(&mut ref_buf[..], *num, '0');
 
-            assert_eq!(int_buf, ref_buf);
+            assert_eq!(ok1, ok2);
+            if ok1 {
+                assert_eq!(int_buf, ref_buf);
+            }
         }
     }
 
-    fn format_float_into_ref(buf: &mut [u8], num: f64, digits_after_decimal: u32) {
+    fn format_float_into_ref(buf: &mut [u8], num: f64, digits_after_decimal: u32) -> bool {
         let buf_len = buf.len();
         let s = format!("{0:1$.2$}", num, buf_len, digits_after_decimal as usize);
         let s_len = s.len();
 
         if s_len > buf_len {
             // Number didn't fit
-            fill_buf(buf, b'*');
+            false
         } else {
             buf.copy_from_slice(&(s.into_bytes())[0..buf_len]);
+            true
         }
     }
 
@@ -199,14 +200,17 @@ mod test {
                                -1234.5678,
                                -12345.6789];
 
-        let mut int_buf: [u8; 8] = [0; 8];
+        let mut flt_buf: [u8; 8] = [0; 8];
         let mut ref_buf: [u8; 8] = [0; 8];
 
         for num in test_floats.iter() {
-            format_float_into(&mut int_buf[..], *num, 2);
-            format_float_into_ref(&mut ref_buf[..], *num, 2);
+            let ok1 = format_float_into(&mut flt_buf[..], *num, 2);
+            let ok2 = format_float_into_ref(&mut ref_buf[..], *num, 2);
 
-            assert_eq!(int_buf, ref_buf);
+            assert_eq!(ok1, ok2);
+            if ok1 {
+                assert_eq!(flt_buf, ref_buf);
+            }
         }
     }
 }
