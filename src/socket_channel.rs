@@ -4,7 +4,7 @@
 
 use core::mem;
 use cc3200_sys::socket::{Family, Protocol, SocketError, SocketType, RawSocket, sl_Socket, sl_Close, sl_Connect,
-                         sl_Send, sl_Recv, SlSockAddrIn_t, SlSockAddr_t, sl_Htonl};
+                         sl_Send, sl_Recv, SlSockAddrIn_t, SlSockAddr_t, sl_Htonl, sl_Htons};
 use simplelink::SimpleLink;
 use smallhttp::traits::{Channel, ChannelError};
 
@@ -51,7 +51,7 @@ impl Channel for SocketChannel {
 
         let inaddr = SlSockAddrIn_t {
             sin_family: Family::AF_INET,
-            sin_port: port,
+            sin_port: unsafe { sl_Htons(port) },
             sin_addr: unsafe { sl_Htonl(addr) },
             sin_zero: [0; 8]
         };
@@ -59,6 +59,7 @@ impl Channel for SocketChannel {
         let ret = unsafe { sl_Connect(self.inner, &sockaddr as *const SlSockAddr_t, mem::size_of::<SlSockAddrIn_t>() as i16) };
 
         if ret != SocketError::SOC_OK {
+            debug!("Unable to connect to {:?} : {:?}", sockaddr, ret);
             Err(ChannelError::UnableToConnect)
         } else {
             Ok(())
@@ -76,6 +77,7 @@ impl Channel for SocketChannel {
         if ret >= 0 {
             Ok(ret as usize)
         } else {
+            debug!("Unable to send: {:?}", ret);
             Err(ChannelError::SomethingWentWrong)
         }
     }
