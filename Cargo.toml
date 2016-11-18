@@ -15,7 +15,7 @@ cc3200-sys = { path = "cc3200-sys" }
 freertos_alloc = { path = "freertos_alloc" }
 freertos_rs = "0.1"
 log = { version = "0.3", default-features = false }
-smallhttp = { path = "/home/fabrice/dev/smallhttp" }
+smallhttp = { git = "https://github.com/fabricedesre/smallhttp.git" }
 
 [profile.dev]
 panic = "abort"
