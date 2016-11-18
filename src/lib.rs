@@ -28,6 +28,7 @@ pub mod logger;
 pub mod cc3200;
 pub mod i2c_devices;
 pub mod isr_vectors;
+pub mod format;
 
 pub mod bma222;
 pub mod tmp006;
