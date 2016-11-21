@@ -12,6 +12,7 @@ fn main() {
         .include("sdk/simplelink_extlib/provisioninglib")
         .include("sdk/third_party/FreeRTOS/source/include")
         .include("sdk/third_party/FreeRTOS/source/portable/GCC/ARM_CM4")
+        .file("aeabi.c")
         .file("board.c")
         .file("simplelink.c")
         .file("StrPrintf.c")
