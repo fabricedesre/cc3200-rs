@@ -12,27 +12,6 @@ use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_
                        I2C_IF_ReadFrom};
 use logger::SimpleLogger;
 
-#[macro_export]
-macro_rules! print {
-   ($($args:tt)*) => {
-       // Ignore logging errors. It's not worth killing the program because of
-       // failed debug output. It would be nicer to save the error and report
-       // it later, however.
-       {
-           use core::fmt::Write;
-           let mut console = $crate::cc3200::Console {};
-           let _ = write!(console, $($args)*);
-       }
-   }
-}
-
-
-#[macro_export]
-macro_rules! println {
-   ($fmt:expr)               => ( print!(concat!($fmt, '\n')) );
-   ($fmt:expr, $($args:tt)*) => ( print!(concat!($fmt, '\n'), $($args)*) );
-}
-
 #[allow(non_camel_case_types, dead_code)]
 pub enum LedName {
     NO_LED_IND = 0,
