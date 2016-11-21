@@ -5,6 +5,7 @@ use core::fmt;
 pub enum SimpleLinkError {
     Wlan(self::WlanError),
     Osi(self::OsiError),
+    FileSystem(self::FileSystemError),
     ValueError(&'static str, i32),
 }
 
@@ -20,12 +21,18 @@ impl From<self::OsiError> for SimpleLinkError {
     }
 }
 
+impl From<self::FileSystemError> for SimpleLinkError {
+    fn from(err: self::FileSystemError) -> SimpleLinkError {
+        SimpleLinkError::FileSystem(err)
+    }
+}
 
 impl fmt::Display for SimpleLinkError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             SimpleLinkError::Wlan(e) => write!(formatter, "WlanError: {:?}", e),
             SimpleLinkError::Osi(e) => write!(formatter, "OsiError: {:?}", e),
+            SimpleLinkError::FileSystem(e) => write!(formatter, "FileSystemError: {:?}", e),
             SimpleLinkError::ValueError(ref enum_name, n) => {
                 write!(formatter,
                        "ValueError: Unknown enum value: {} for {}",
@@ -352,6 +359,86 @@ pub struct SlPingStartCommand {
     pub ip3_or_padding: u32,
 }
 
+c_like_enum_neg! {
+    FileSystemError {
+        NOT_SUPPORTED = -1,
+        FAILED_TO_READ = -2,
+        INVALID_MAGIC_NUM = -3,
+        DEVICE_NOT_LOADED = -4,
+        FAILED_TO_CREATE_LOCK_OBJ = -5,
+        UNKNOWN = -6,
+        FS_ALREADY_LOADED = -7,
+        FAILED_TO_CREATE_FILE = -8,
+        INVALID_ARGS = -9,
+        EMPTY_ERROR = -10,
+        FILE_NOT_EXISTS = -11,
+        INVALID_FILE_ID = -12,
+        READ_DATA_LENGTH = -13,
+        ALLOC = -14,
+        OFFSET_OUT_OF_RANGE = -15,
+        FAILED_TO_WRITE = -16,
+        INVALID_HANDLE = -17,
+        FAILED_LOAD_FILE = -18,
+        CONTINUE_WRITE_MUST_BE_MOD_4 = -19,
+        FAILED_INIT_STORAGE = -20,
+        FAILED_READ_NVFILE = -21,
+        BAD_FILE_MODE = -22,
+        FILE_ACCESS_IS_DIFFERENT = -23,
+        NO_ENTRIES_AVAILABLE = -24,
+        PROGRAM = -25,
+        FILE_ALREADY_EXISTS = -26,
+        INVALID_ACCESS_TYPE = -27,
+        FILE_EXISTS_ON_DIFFERENT_DEVICE_ID = -28,
+        FILE_MAX_SIZE_BIGGER_THAN_EXISTING_FILE = -29,
+        NO_AVAILABLE_BLOCKS = -30,
+        FAILED_TO_READ_INTEGRITY_HEADER_1 = -31,
+        FAILED_TO_READ_INTEGRITY_HEADER_2 = -32,
+        FAILED_TO_ALLOCATE_MEM = -33,
+        NO_AVAILABLE_NV_INDEX = -34,
+        FAILED_WRITE_NVMEM_HEADER = -35,
+        DEVICE_IS_NOT_FORMATTED = -36,
+        WARNING_FILE_NAME_NOT_KEPT = -37,
+        SIZE_OF_FILE_EXT_EXCEEDED = -38,
+        FILE_IMAGE_IS_CORRUPTED = -39,
+        INVALID_BUFFER_FOR_WRITE = -40,
+        INVALID_BUFFER_FOR_READ = -41,
+        FILE_MAX_SIZE_EXCEEDED = -42,
+        MAX_FS_FILES_IS_SMALLER = -43,
+        MAX_FS_FILES_IS_LARGER = -44,
+        FILE_HAS_RESERVED_NV_INDEX = -45,
+        OVERLAP_DETECTION_THRESHHOLD = -46,
+        DATA_IS_NOT_ALIGNED = -47,
+        DATA_ADDRESS_SHOUD_BE_IN_DATA_RAM = -48,
+        NO_DEVICE_IS_LOADED = -49,
+        TOKEN_IS_NOT_VALID = -50,
+        FILE_UNVALID_FILE_SIZE = -51,
+        SECURITY_ALLERT = -52,
+        FILE_SYSTEM_IS_LOCKED = -53,
+        WRONG_FILE_NAME = -54,
+        FAILED_READ_NVMEM_HEADER = -55,
+        INCORRECT_OFFSET_ALIGNMENT = -56,
+        SECURE_FILE_MUST_BE_COMMIT = -57,
+        SECURITY_BUF_ALREADY_ALLOC = -58,
+        FILE_NAME_EXIST = -59,
+        CERT_CHAIN_ERROR = -60,
+        NOT_16_ALIGNED = -61,
+        WRONG_SIGNATURE_OR_CERTIFIC_NAME_LENGTH = -62,
+        WRONG_SIGNATURE = -63,
+        FILE_HAS_NOT_BEEN_CLOSE_CORRECTLY = -64,
+        ERASING_FLASH = -65,
+        FILE_IS_NOT_SECURE_AND_SIGN = -66,
+        EMPTY_SFLASH = -67
+    }
+}
+
+#[repr(C)]
+pub struct SlFsFileInfo {
+    pub flags: u16,
+    pub file_length: u32,
+    pub allocated_length: u32,
+    pub token: [u32; 4]
+}
+
 extern "C" {
     // From simplelink/device.h
 
@@ -420,4 +507,34 @@ extern "C" {
     pub fn simplelink_ping_packets_received() -> u32;
 
     pub fn SimpleLinkPingReport(report: *mut SlPingReport);
+
+    // File System
+    //
+
+    // From simplelink/fs.h
+
+    pub fn sl_FsOpen(file_name: *const u8,
+                     mode: u32,
+                     token: *const u32,
+                     file_handle: *mut i32) -> i32;
+    pub fn sl_FsClose(file_handle: i32,
+                      certificate_file_name: *const u8,
+                      signature: *const u8,
+                      signature_length: u32) -> i16;
+    pub fn sl_FsRead(file_handle: i32,
+                     offset: u32,
+                     data: *mut u8,
+                     len: u32) -> i32;
+    pub fn sl_FsWrite(file_handle: i32,
+                      offset: u32,
+                      data: *const u8,
+                      len: u32) -> i32;
+    pub fn sl_FsGetInfo(filename: *const u8,
+                        token: u32,
+                        file_info: *mut SlFsFileInfo) -> i16;
+    pub fn sl_FsDel(filename: *const u8, token: u32) -> i16;
+
+    // simplelink.c
+
+    pub fn sl_FsMode(write: bool, create: bool, max_size: u32) -> u32;
 }

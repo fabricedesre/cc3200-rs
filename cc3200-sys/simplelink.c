@@ -10,6 +10,8 @@
 
 #include "wlan.h"
 
+#include "fs.h"
+
 // We should rewrite this in rust. Just using C for expediency right now.
 
 volatile unsigned long  g_ulStatus = 0;// SimpleLink Status
@@ -223,4 +225,14 @@ void SimpleLinkPingReport(SlPingReport_t *pPingReport)
     g_ulPingPacketsRecv = pPingReport->PacketsReceived;
 }
 
-
+_u32 sl_FsMode(bool write, bool create, _u32 maxCreateSize)
+{
+    if (create) {
+        return FS_MODE_OPEN_CREATE(maxCreateSize,
+                                   _FS_FILE_OPEN_FLAG_COMMIT |
+                                   _FS_FILE_PUBLIC_WRITE);
+    } else if (write) {
+        return FS_MODE_OPEN_WRITE;
+    }
+    return FS_MODE_OPEN_READ;
+}
