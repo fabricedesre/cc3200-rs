@@ -35,6 +35,7 @@ fn main() {
         .file("sdk/simplelink/cc_pal.c")
         .file("sdk/simplelink/source/device.c")
         .file("sdk/simplelink/source/driver.c")
+        .file("sdk/simplelink/source/fs.c")
         .file("sdk/simplelink/source/netapp.c")
         .file("sdk/simplelink/source/netcfg.c")
         .file("sdk/simplelink/source/socket.c")
