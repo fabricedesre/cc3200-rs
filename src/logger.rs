@@ -8,14 +8,14 @@ use log::{self, LogRecord, LogLevelFilter, LogMetadata, SetLoggerError};
 
 #[macro_export]
 macro_rules! print {
-    ($($args:tt)*) => {
+    ($($args:tt)*) => {{
         // Ignore logging errors. It's not worth killing the program because of
         // failed debug output. It would be nicer to save the error and report
         // it later, however.
         use core::fmt::Write;
         let mut console = $crate::cc3200::Console {};
         let _ = write!(console, $($args)*);
-    }
+    }}
 }
 
 #[macro_export]
