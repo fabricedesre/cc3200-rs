@@ -39,6 +39,7 @@ pub mod bma222;
 pub mod tmp006;
 pub mod rtc;
 pub mod simplelink;
+pub mod io;
 pub mod socket_channel;
 
 // We need to make sure that we pull in soft float versions of libm.a, libc.a
