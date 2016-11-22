@@ -152,13 +152,12 @@ impl SimpleLink {
         let mac_addr_ptr = if mac_addr_len > 0 {
             mac_addr.as_ptr()
         } else {
-            ptr::null() as *const u8
+            ptr::null()
         };
-        let sec_params_ptr: *const SlSecParams = sec_params.map(|r| &r as *const SlSecParams)
-            .unwrap_or(ptr::null() as *const SlSecParams);
-        let sec_params_ext_ptr: *const SlSecParamsExt =
-            sec_params_ext.map(|r| &r as *const SlSecParamsExt)
-                .unwrap_or(ptr::null() as *const SlSecParamsExt);
+        let sec_params_ptr =
+            sec_params.as_ref().map(|r| r as *const SlSecParams).unwrap_or(ptr::null());
+        let sec_params_ext_ptr =
+            sec_params_ext.as_ref().map(|r| r as *const SlSecParamsExt).unwrap_or(ptr::null());
         try_wlan!(sl_WlanConnect(ssid_ptr,
                                  ssid_len,
                                  mac_addr_ptr,
