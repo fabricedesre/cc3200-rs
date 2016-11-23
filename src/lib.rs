@@ -32,7 +32,7 @@ pub mod format;
 
 pub mod bma222;
 pub mod tmp006;
-
+pub mod rtc;
 pub mod simplelink;
 pub mod config; // SSID and password currently set here
 
