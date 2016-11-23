@@ -4,7 +4,7 @@
 
 extern crate numeric_utils;
 
-use numeric_utils::{format_float_into, format_int_into};
+use numeric_utils::{format_float_into, format_int_into, format_hex_into};
 
 fn format_int_into_ref(buf: &mut [u8], num: i32, fill: char) -> bool {
 
@@ -104,4 +104,38 @@ fn test_float() {
     }
 }
 
+fn format_hex_into_ref(buf: &mut [u8], num: u32) -> bool {
+    let s = format!("{:01$x}", num, buf.len());
+    let s_len = s.len();
+    let buf_len = buf.len();
+
+    // The width parameter is a minimum, but our buffer is constrained.
+    // So we copy the rightmost buf_len characters.
+    if s_len > buf_len {
+        false
+    } else {
+        buf.copy_from_slice(&(s.into_bytes())[0..buf_len]);
+        true
+    }
+}
+
+#[test]
+fn test_hex() {
+    let test_nums = vec![0x123456,
+                         0x789abc,
+                         0xdef000];
+
+    let mut hex_buf: [u8; 8] = [0; 8];
+    let mut ref_buf: [u8; 8] = [0; 8];
+
+    for num in test_nums.iter() {
+        let ok1 = format_hex_into(&mut hex_buf[..], *num);
+        let ok2 = format_hex_into_ref(&mut ref_buf[..], *num);
+
+        assert_eq!(ok1, ok2);
+        if ok1 {
+            assert_eq!(hex_buf, ref_buf);
+        }
+    }
+}
 

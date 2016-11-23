@@ -523,8 +523,15 @@ OsiReturnVal_e VStartSimpleLinkSpawnTask(unsigned portBASE_TYPE uxPriority)
     {
     	return OSI_OPERATION_FAILED;
     }
+
+    // NOTE: The event callbacks normally run on this thread, so we bumped the
+    //       stack size from 2048 bytes to 4096 bytes since rust is still quite
+    // stack hungry. Without this, simple println! statements could cause
+    // a stack overflow and data corruption leading to a hard fault before
+    // the FreeRTOS stack checker would detect it.
+
     if(pdPASS == xTaskCreate( vSimpleLinkSpawnTask, ( portCHAR * ) "SLSPAWN",\
-    					 (2048/sizeof( portSTACK_TYPE )), NULL, uxPriority, &xSimpleLinkSpawnTaskHndl ))
+    					 (4096/sizeof( portSTACK_TYPE )), NULL, uxPriority, &xSimpleLinkSpawnTaskHndl ))
     {
     	return OSI_OK;
     }

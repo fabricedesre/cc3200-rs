@@ -292,6 +292,10 @@ typedef struct
 #define SCB_BASE    (SCS_BASE + 0x0D00UL)   /*!< System Control Block Base Address */
 #define SCB         ((SCB_Type *)SCB_BASE)  /*!< SCB configuration struct */
 
+int is_isr_active(void) {
+    return (SCB->ICSR & 0x1ff) != 0;
+}
+
 // The ARMv7M Architecture manual (section B.1.5.6) says that upon entry
 // to an exception, that the registers will be in the following order on the
 // // stack: R0, R1, R2, R3, R12, LR, PC, XPSR

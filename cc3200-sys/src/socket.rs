@@ -4,6 +4,9 @@
 
 // Bindings for a subset of sdk/simplelink/include/socket.h
 
+use core::convert::TryFrom;
+use simplelink::SimpleLinkError;
+
 #[repr(i16)]
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
@@ -51,8 +54,10 @@ pub enum SocketError {
     ECLOSE = -15, // close socket operation failed to transmit all queued packets
     EALREADY_ENABLED = -21, // Transceiver - Transceiver already ON. there could be only one
     EINVAL = -22, // Invalid argument
-    EAUTO_CONNECT_OR_CONNECTING = -69, /* Transceiver - During connection, connected or auto mode started */
-    CONNECTION_PENDING = -72, /* Transceiver - Device is connected, disconnect first to open transceiver */
+    EAUTO_CONNECT_OR_CONNECTING = -69, /* Transceiver - During connection,
+                                        * connected or auto mode started */
+    CONNECTION_PENDING = -72, /* Transceiver - Device is connected, disconnect
+                               * first to open transceiver */
     EUNSUPPORTED_ROLE = -86, // Transceiver - Trying to start when WLAN role is AP or P2P GO
     EDESTADDRREQ = -89, // Destination address required
     EPROTOTYPE = -91, // Protocol wrong type for socket
@@ -229,7 +234,7 @@ impl ::core::convert::TryInto<SocketError> for SizeOrError {
     type Err = ();
     fn try_into(self) -> Result<SocketError, Self::Err> {
         if self >= 0 {
-            return  Err(());
+            return Err(());
         }
         Ok(unsafe { ::core::intrinsics::transmute::<SizeOrError, SocketError>(self) })
     }
@@ -271,7 +276,9 @@ pub struct SlSockAddrIn_t {
 }
 
 impl ::core::default::Default for SlSockAddrIn_t {
-    fn default() -> Self { unsafe { ::core::mem::zeroed() } }
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 
 #[repr(C)]
@@ -282,7 +289,9 @@ pub struct SlFdSet_t {
 }
 
 impl ::core::default::Default for SlFdSet_t {
-    fn default() -> Self { unsafe { ::core::mem::zeroed() } }
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 
 pub type SltimeT = u32;
@@ -296,7 +305,9 @@ pub struct SlTimeval_t {
 }
 
 impl ::core::default::Default for SlTimeval_t {
-    fn default() -> Self { unsafe { ::core::mem::zeroed() } }
+    fn default() -> Self {
+        unsafe { ::core::mem::zeroed() }
+    }
 }
 
 #[repr(i16)]
@@ -329,13 +340,48 @@ pub enum OptionName {
     IP_ADD_MEMBERSHIP = 65, // Join IPv4 multicast membership
     IP_DROP_MEMBERSHIP = 66, // Leave IPv4 multicast membership
     IP_HDRINCL = 67, // Raw socket IPv4 header included.
-    IP_RAW_RX_NO_HEADER = 68, /* Proprietary socket option that does not includeIPv4/IPv6 header=and extension headers) on received raw sockets */
+    IP_RAW_RX_NO_HEADER = 68, /* Proprietary socket option that does not includeIPv4/IPv6
+                               * header=and extension headers) on received raw sockets */
     IP_RAW_IPV6_HDRINCL = 69, // Transmitted buffer over IPv6 socket contains IPv6 header.
 
     SO_PHY_RATE = 100, // WLAN Transmit rate
     SO_PHY_TX_POWER = 101, // TX Power level
     SO_PHY_NUM_FRAMES_TO_TX = 102, // Number of frames to transmit
     SO_PHY_PREAMBLE = 103, // Preamble for transmission
+}
+
+c_like_enum! {
+    SlSocketEventNum {
+        SL_SOCKET_TX_FAILED_EVENT = 1,
+        SL_SOCKET_ASYNC_EVENT = 2
+    }
+}
+
+#[repr(C)]
+pub struct SlSocketAsyncEvent {
+    pub sd: u8,
+    pub typ: u8,
+    pub val: i16,
+    pub extra_info: *const u8,
+}
+
+#[repr(C)]
+pub struct SlSockTxFailEventData {
+    pub status: i16,
+    pub sd: u8,
+    padding: u8,
+}
+
+#[repr(C)]
+pub union SlSockEventData {
+    pub tx_fail_data: SlSockTxFailEventData, // SL_SOCKET_TX_FAILED_EVENT
+    pub async_data: SlSocketAsyncEvent, // SL_SOCKET_ASYNC_EVENT
+}
+
+#[repr(C)]
+pub struct SlSockEvent {
+    pub event_num: u32,
+    pub event_data: SlSockEventData,
 }
 
 extern "C" {
@@ -362,8 +408,8 @@ extern "C" {
     ///                           SOCK_DGRAM=datagram service or Datagram Sockets)
     ///                           SOCK_RAW=raw protocols atop the network layer)
     ///                           when used with AF_RF:
-    ///                                   SOCK_DGRAM - L2 socket
-    ///                                   SOCK_RAW - L1 socket - bypass WLAN CCA=Clear Channel Assessment)
+    ///                             SOCK_DGRAM - L2 socket
+    ///                             SOCK_RAW - L1 socket - bypass WLAN CCA=Clear Channel Assessment)
     ///
     /// protocol         specifies a particular transport to be used with the socket.
     ///                        The most common are IPPROTO_TCP, IPPROTO_SCTP, IPPROTO_UDP,
@@ -373,7 +419,8 @@ extern "C" {
     ///
     ///  On success, socket handle that is used for consequent socket operations.
     ///                        A successful return code should be a positive number=int16)
-    ///                        On error, a negative=int16) value will be returned specifying the error code.
+    ///                        On error, a negative=int16) value will be returned
+    ///                        specifying the error code.
     ///                   AFNOSUPPORT  - illegal domain parameter
     ///                   PROTOTYPE  - illegal type parameter
     ///                   ACCES   - permission denied
@@ -410,7 +457,8 @@ extern "C" {
     ///
     /// socket           socket descriptor=handle)
     /// addr             specifies the destination addr sockaddr:
-    ///                        - code for the address format. On this version only AF_INET is supported.
+    ///                        - code for the address format. On this version only
+    ///                          AF_INET is supported.
     ///                        - socket address, the length depends on the code format
     ///
     /// addrlen          contains the size of the structure pointed to by addr
@@ -418,8 +466,9 @@ extern "C" {
     ///                  On success, returns a socket handle.
     ///                     On a non-blocking connect a possible negative value is SL_EALREADY.
     ///                     On failure, negative value.
-    ///                        SL_POOL_IS_EMPTY may be return in case there are no resources in the system
-    ///                          In this case try again later or increase MAX_CONCURRENT_ACTIONS
+    ///                        SL_POOL_IS_EMPTY may be return in case there are no
+    ///                          resources in the system. In this case try again later
+    ///                          or increase MAX_CONCURRENT_ACTIONS
     pub fn sl_Connect(socket: RawSocket, addr: *const SlSockAddr_t, addrlen: i16) -> SocketError;
 
     /// set socket options
@@ -455,29 +504,39 @@ extern "C" {
     ///                        - SL_SOL_SOCKET
     ///                          - SL_SO_KEEPALIVE
     ///                                         Enable/Disable periodic keep alive.
-    ///                                         Keeps TCP connections active by enabling the periodic transmission of messages
+    ///                                         Keeps TCP connections active by enabling
+    ///                                         the periodic transmission of messages
     ///                                         Timeout is 5 minutes.
     ///                                         Default: Enabled
-    ///                                         This options takes SlSockKeepalive_t struct as parameter
+    ///                                         This options takes SlSockKeepalive_t struct
+    ///                                         as parameter
     ///                          - SL_SO_RCVTIMEO
-    ///                                         Sets the timeout value that specifies the maximum amount of time an input function waits until it completes.
+    ///                                         Sets the timeout value that specifies the maximum
+    ///                                         amount of time an input function waits
+    ///                                         until it completes.
     ///                                         Default: No timeout
     ///                                         This options takes SlTimeval_t struct as parameter
     ///                          - SL_SO_RCVBUF
     ///                                         Sets tcp max recv window size.
-    ///                                         This options takes SlSockWinsize_t struct as parameter
+    ///                                         This options takes SlSockWinsize_t struct
+    ///                                         as parameter
     ///                          - SL_SO_NONBLOCKING
-    ///                                         Sets socket to non-blocking operation Impacts: connect, accept, send, sendto, recv and recvfrom.
+    ///                                         Sets socket to non-blocking operation Impacts:
+    ///                                         connect, accept, send, sendto, recv and recvfrom.
     ///                                         Default: Blocking.
-    ///                                         This options takes SlSockNonblocking_t struct as parameter
+    ///                                         This options takes SlSockNonblocking_t struct
+    ///                                         as parameter
     ///                          - SL_SO_SECMETHOD
     ///                                         Sets method to tcp secured socket=SL_SEC_SOCKET)
     ///                                         Default: SL_SO_SEC_METHOD_SSLv3_TLSV1_2
-    ///                                         This options takes SlSockSecureMethod struct as parameter
+    ///                                         This options takes SlSockSecureMethod struct
+    ///                                         as parameter
     ///                          - SL_SO_SEC_MASK
-    ///                                     Sets specific cipher to tcp secured socket=SL_SEC_SOCKET)
+    ///                                         Sets specific cipher to tcp secured
+    ///                                         socket=SL_SEC_SOCKET)
     ///                                         Default: "Best" cipher suitable to method
-    ///                                         This options takes SlSockSecureMask struct as parameter
+    ///                                         This options takes SlSockSecureMask struct
+    ///                                         as parameter
     ///                          - SL_SO_SECURE_FILES_CA_FILE_NAME
     ///                                         Map secured socket to CA file by name
     ///                                         This options takes _u8 buffer as parameter
@@ -495,7 +554,8 @@ extern "C" {
     ///                                         This options takes _u32 as channel number parameter
     ///                        - SL_IPPROTO_IP
     ///                          - SL_IP_MULTICAST_TTL
-    ///                                         Set the time-to-live value of outgoing multicast packets for this socket.
+    ///                                         Set the time-to-live value of outgoing
+    ///                                         multicast packets for this socket.
     ///                                         This options takes _u8 as parameter
     ///                          - SL_IP_ADD_MEMBERSHIP
     ///                                         UDP socket, Join a multicast group.
@@ -508,15 +568,22 @@ extern "C" {
     ///                                         Default: data includes ip header
     ///                                         This options takes _u32 as parameter
     ///                          - SL_IP_HDRINCL
-    ///                                         RAW socket only, the IPv4 layer generates an IP header when sending a packet unless
-    ///                                         the IP_HDRINCL socket option is enabled on the socket.
-    ///                                         When it is enabled, the packet must contain an IP header.
-    ///                                         Default: disabled, IPv4 header generated by Network Stack
+    ///                                         RAW socket only, the IPv4 layer generates
+    ///                                         an IP header when sending a packet unless
+    ///                                         the IP_HDRINCL socket option is enabled
+    ///                                         on the socket. When it is enabled, the
+    ///                                         packet must contain an IP header.
+    ///                                         Default: disabled, IPv4 header generated by
+    ///                                         Network Stack
     ///                                         This options takes _u32 as parameter
     ///                          - SL_IP_RAW_IPV6_HDRINCL=inactive)
-    ///                                         RAW socket only, the IPv6 layer generates an IP header when sending a packet unless
-    ///                                         the IP_HDRINCL socket option is enabled on the socket. When it is enabled, the packet must contain an IP header
-    ///                                         Default: disabled, IPv4 header generated by Network Stack
+    ///                                         RAW socket only, the IPv6 layer generates
+    ///                                         an IP header when sending a packet unless
+    ///                                         the IP_HDRINCL socket option is enabled
+    ///                                         on the socket. When it is enabled, the
+    ///                                         packet must contain an IP header
+    ///                                         Default: disabled, IPv4 header generated by
+    ///                                         Network Stack
     ///                                         This options takes _u32 as parameter
     ///                        - SL_SOL_PHY_OPT
     ///                          - SL_SO_PHY_RATE
@@ -528,7 +595,8 @@ extern "C" {
     ///                                         Valid rage is 1-15
     ///                                         This options takes _u32 as parameter
     ///                          - SL_SO_PHY_NUM_FRAMES_TO_TX
-    ///                                         RAW socket, set number of frames to transmit in transceiver mode.
+    ///                                         RAW socket, set number of frames to
+    ///                                         transmit in transceiver mode.
     ///                                         Default: 1 packet
     ///                                         This options takes _u32 as parameter
     ///                          - SL_SO_PHY_PREAMBLE
@@ -609,24 +677,23 @@ extern "C" {
     ///
     /// This function is used to transmit a message to another socket.
     /// Returns immediately after sending data to device.
-    /// In case of TCP failure an async event SL_SOCKET_TX_FAILED_EVENT is going to be received.
-    /// In case of a RAW socket (transceiver mode), extra 4 bytes should be reserved at the end of the
-    /// frame data buffer for WLAN FCS
+    /// In case of TCP failure an async event SL_SOCKET_TX_FAILED_EVENT is
+    /// going to be received.
+    /// In case of a RAW socket (transceiver mode), extra 4 bytes should be
+    /// reserved at the end of the frame data buffer for WLAN FCS
     ///
     /// socket           socket handle
     /// buf              Points to a buffer containing the message to be sent
     /// len              message size in bytes. Range: 1-1460 bytes
     /// flags            Specifies the type of message
-    ///                        transmission. On this version, this parameter is not
-    ///                        supported for TCP.
-    ///                        For transceiver mode, the SL_RAW_RF_TX_PARAMS macro can be used to determine
-    ///                        transmission parameters (channel,rate,tx_power,preamble)
+    ///                  transmission. On this version, this parameter is not
+    ///                  supported for TCP.
+    ///                  For transceiver mode, the SL_RAW_RF_TX_PARAMS macro
+    ///                  can be used to determine transmission parameters
+    ///                  (channel,rate,tx_power,preamble)
     ///
     ///                   Return the number of bytes transmitted, or -1 if an error occurred
-    pub fn sl_Send(socket: RawSocket,
-                   buf: *const u8,
-                   len: i16,
-                   flags: i16) -> SizeOrError;
+    pub fn sl_Send(socket: RawSocket, buf: *const u8, len: i16, flags: i16) -> SizeOrError;
 
     /// assign a name to a socket
     ///
@@ -674,7 +741,8 @@ extern "C" {
     ///
     /// nfds        the highest-numbered file descriptor in any of the three sets, plus 1.
     /// readsds     socket descriptors list for read monitoring and accept monitoring
-    /// writesds    socket descriptors list for connect monitoring only, write monitoring is not supported, non blocking connect is supported
+    /// writesds    socket descriptors list for connect monitoring only, write
+    ///             monitoring is not supported, non blocking connect is supported
     /// exceptsds   socket descriptors list for exception monitoring, not supported.
     /// timeout     is an upper bound on the amount of time elapsed
     ///             before select() returns. Null or above 0xffff seconds means
@@ -695,9 +763,12 @@ extern "C" {
     ///                 exceptsds - return the sockets closed recently.
     ///                 SL_POOL_IS_EMPTY may be return in case there are no resources in the system
     ///                 In this case try again later or increase MAX_CONCURRENT_ACTIONS
-    pub fn sl_Select(nfds: i16, readsds: *mut SlFdSet_t,
-                     writesds: *mut SlFdSet_t, exceptsds: *mut SlFdSet_t,
-                     timeout: *mut SlTimeval_t) -> SizeOrError;
+    pub fn sl_Select(nfds: i16,
+                     readsds: *mut SlFdSet_t,
+                     writesds: *mut SlFdSet_t,
+                     exceptsds: *mut SlFdSet_t,
+                     timeout: *mut SlTimeval_t)
+                     -> SizeOrError;
 
     /// Sets current socket descriptor on SlFdSet_t container
     pub fn SL_FD_SET(socket: RawSocket, fdset: *mut SlFdSet_t);
