@@ -27,8 +27,8 @@ extern crate collections;
 
 use cc3200::config;
 use cc3200::cc3200::{Board, I2C, I2COpenMode, LedEnum, LedName};
-use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError,
-                         WlanConfig, WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
+use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, WlanConfig,
+                         WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
 use cc3200::socket_channel::SocketChannel;
 
 use cc3200::i2c_devices::TemperatureSensor;
@@ -36,6 +36,7 @@ use cc3200::tmp006::TMP006;
 
 use freertos_rs::{CurrentTask, Duration, Task};
 use smallhttp::Client;
+use smallhttp::traits::Channel;
 
 static VERSION: &'static str = "1.0";
 
@@ -93,9 +94,18 @@ fn configure_simple_link_to_default() -> Result<(), Error> {
 
     println!("Host Driver Version: {}", SimpleLink::get_driver_version());
     println!("Build Version {}.{}.{}.{}.31.{}.{}.{}.{}.{}.{}.{}.{}",
-             ver.nwp_version[0], ver.nwp_version[1], ver.nwp_version[2], ver.nwp_version[3],
-             ver.fw_version[0], ver.fw_version[1], ver.fw_version[2], ver.fw_version[3],
-             ver.phy_version[0], ver.phy_version[1], ver.phy_version[2], ver.phy_version[3]);
+             ver.nwp_version[0],
+             ver.nwp_version[1],
+             ver.nwp_version[2],
+             ver.nwp_version[3],
+             ver.fw_version[0],
+             ver.fw_version[1],
+             ver.fw_version[2],
+             ver.fw_version[3],
+             ver.phy_version[0],
+             ver.phy_version[1],
+             ver.phy_version[2],
+             ver.phy_version[3]);
 
     // Set connection policy to Auto + SmartConfig
     //      (Device's default connection policy)
@@ -181,9 +191,17 @@ fn wlan_station_mode() -> Result<(), Error> {
     loop {
         let temperature: u32 = (temp_sensor.get_temperature().unwrap() * 10.0) as u32;
         info!("Feels like {}.{} C", temperature / 10, temperature % 10);
-        //let url = format!("http://10.252.33.245:8000/enpoint?temp={}.{}", temperature / 10, temperature % 10);
         let mut client = Client::new(SocketChannel::new().unwrap());
-        client.get("http://10.252.33.245:8000/endpoint").open().unwrap().body(&[]);
+        let response = client.get("http://10.252.33.245:8000/endpoint")
+            .open()
+            .unwrap()
+            .send(&[])
+            .unwrap()
+            .response(|_| false)
+            .unwrap();
+        let mut buffer = [0u8; 256];
+        info!("Received {}",
+              response.body.read_string_to_end(&mut buffer).unwrap());
         CurrentTask::delay(Duration::ms(1000))
     }
 

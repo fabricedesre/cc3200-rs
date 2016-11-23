@@ -3,11 +3,13 @@
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use core::mem;
-use cc3200_sys::socket::{Family, Protocol, SocketError, SocketType, RawSocket, sl_Socket, sl_Close, sl_Connect,
-                         sl_Send, sl_Recv, SlSockAddrIn_t, SlSockAddr_t, sl_Htonl, sl_Htons};
+use cc3200_sys::socket::{Family, Protocol, SocketError, SocketType, RawSocket, sl_Socket,
+                         sl_Close, sl_Connect, sl_Send, sl_Recv, SlSockAddrIn_t, SlSockAddr_t,
+                         sl_Htonl, sl_Htons};
 use simplelink::SimpleLink;
 use smallhttp::traits::{Channel, ChannelError};
 
+#[derive(Clone)]
 pub struct SocketChannel {
     inner: RawSocket,
 }
@@ -41,10 +43,8 @@ impl Channel for SocketChannel {
     fn open(&mut self, host: &str, port: u16, tls: bool) -> Result<(), ChannelError> {
         // Convert the host name into a socket address.
         let addr = match SimpleLink::netapp_get_host_by_name(host) {
-            Ok(addr) => {
-                addr
-            },
-            Err(_) => return Err(ChannelError::InvalidHostName)
+            Ok(addr) => addr,
+            Err(_) => return Err(ChannelError::InvalidHostName),
         };
 
         // TODO: use getsockopt to set the TLS options is tls is true.
@@ -53,10 +53,15 @@ impl Channel for SocketChannel {
             sin_family: Family::AF_INET,
             sin_port: unsafe { sl_Htons(port) },
             sin_addr: unsafe { sl_Htonl(addr) },
-            sin_zero: [0; 8]
+            sin_zero: [0; 8],
         };
-        let sockaddr = unsafe { ::core::intrinsics::transmute::<SlSockAddrIn_t, SlSockAddr_t>(inaddr) };
-        let ret = unsafe { sl_Connect(self.inner, &sockaddr as *const SlSockAddr_t, mem::size_of::<SlSockAddrIn_t>() as i16) };
+        let sockaddr =
+            unsafe { ::core::intrinsics::transmute::<SlSockAddrIn_t, SlSockAddr_t>(inaddr) };
+        let ret = unsafe {
+            sl_Connect(self.inner,
+                       &sockaddr as *const SlSockAddr_t,
+                       mem::size_of::<SlSockAddrIn_t>() as i16)
+        };
 
         if ret != SocketError::SOC_OK {
             debug!("Unable to connect to {:?} : {:?}", sockaddr, ret);
@@ -68,7 +73,7 @@ impl Channel for SocketChannel {
 
     // Tries to send `len` bytes. Returns the number of bytes successfully sent,
     // or an error.
-    fn send(&self, data: &[u8], len: usize) -> Result<usize, ChannelError> {
+    fn send(&mut self, data: &[u8], len: usize) -> Result<usize, ChannelError> {
         assert!(len < i16::max_value() as usize);
         let ret = unsafe {
             sl_Send(self.inner, data.as_ptr(), len as i16, 0 /* flags */)
@@ -84,7 +89,7 @@ impl Channel for SocketChannel {
 
     // Tries to receive at most `max_len` bytes. Returns the number of bytes successfully received,
     // or an error.
-    fn recv(&self, data: &mut [u8], max_len: usize) -> Result<usize, ChannelError> {
+    fn recv(&mut self, data: &mut [u8], max_len: usize) -> Result<usize, ChannelError> {
         assert!(max_len < i16::max_value() as usize);
         let ret = unsafe {
             sl_Recv(self.inner,
@@ -93,8 +98,10 @@ impl Channel for SocketChannel {
                     0 /* flags */)
         };
         // Rustc doesn't seem to return a SizeOrError but just a i16...
-        if ret >= 0 {
+        if ret > 0 {
             Ok(ret as usize)
+        } else if ret == 0 {
+            Err(ChannelError::EndOfStream)
         } else {
             Err(ChannelError::SomethingWentWrong)
         }
