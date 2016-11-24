@@ -14,7 +14,7 @@ use cc3200_sys;
 // represent all times up until 2078 using a 32-bit number.
 //
 // 0x00000000 thru 1262303999 map to dates from 2038 thru 2078
-// 1262304000 thru 0xffffffff map to dates from Jan 1, 2010 thru to 2028
+// 1262304000 thru 0xffffffff map to dates from Jan 1, 2010 thru to 2038
 const RTC_UNSET_EPOCH: u32 = 1262304000;
 
 pub struct RTC {}
