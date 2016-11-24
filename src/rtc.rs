@@ -21,20 +21,26 @@ pub struct RTC {}
 
 impl RTC {
     pub fn init() {
-        unsafe { cc3200_sys::PRCMRTCInUseSet(); } // Indicate that we're using the RTC
+        unsafe {
+            cc3200_sys::PRCMRTCInUseSet();
+        } // Indicate that we're using the RTC
 
         RTC::set(RTC_UNSET_EPOCH as u64);
     }
 
     pub fn set(seconds: u64) {
-        unsafe { cc3200_sys::PRCMRTCSet((seconds & 0xffffffff) as u32, 0); }
+        unsafe {
+            cc3200_sys::PRCMRTCSet((seconds & 0xffffffff) as u32, 0);
+        }
     }
 
     pub fn get() -> u64 {
         let mut seconds: u32 = 0;
         let mut msecs: u16 = 0;
 
-        unsafe { cc3200_sys::PRCMRTCGet(&mut seconds, &mut msecs); }
+        unsafe {
+            cc3200_sys::PRCMRTCGet(&mut seconds, &mut msecs);
+        }
 
         if seconds < RTC_UNSET_EPOCH {
             0x100000000 + (seconds as u64)
