@@ -11,6 +11,7 @@ use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_
                        MAP_UtilsDelay, I2C_IF_Open, I2C_IF_Close, I2C_IF_Write, I2C_IF_Read,
                        I2C_IF_ReadFrom};
 use logger::SimpleLogger;
+use rtc::RTC;
 
 #[allow(non_camel_case_types, dead_code)]
 pub enum LedName {
@@ -46,6 +47,7 @@ impl Board {
             board_init();
         }
         SimpleLogger::init().unwrap();
+        RTC::init();
     }
 
     pub fn test() {

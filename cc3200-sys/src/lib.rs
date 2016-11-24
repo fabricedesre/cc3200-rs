@@ -31,6 +31,11 @@ extern "C" {
     pub fn ClearTerm();
     pub fn InitTerm();
 
+    // From sdk/driverlib/prcm.c
+    pub fn PRCMRTCInUseSet();
+    pub fn PRCMRTCSet(secs: u32, msecs: u16);
+    pub fn PRCMRTCGet(secs: *mut u32, msecs: *mut u16);
+
     // From sdk/driverlib/utils.c
     pub fn UtilsDelay(loops: u32);
 
