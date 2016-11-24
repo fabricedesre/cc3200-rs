@@ -240,7 +240,7 @@ impl ::core::convert::TryInto<SocketError> for SizeOrError {
 #[allow(non_camel_case_types)]
 pub enum SlBoolean {
     True = 1,
-    Fals = 0,
+    False = 0,
 }
 
 #[allow(non_camel_case_types)]
