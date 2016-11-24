@@ -10,7 +10,14 @@
 
 #include <string.h>
 
+// Version 4.9.3 comes with __aeabi_memclr4, and if we compile this one in then
+// we get duplicate symbols errors. So only include it for version 5 and above.
+
+#if __GNUC__ >= 5
+
 void __aeabi_memclr4(void* dest, size_t n)
 {
     memset(dest, 0, n);
 }
+
+#endif
