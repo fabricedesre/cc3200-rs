@@ -82,7 +82,6 @@ impl I2CDevice {
                     2 => return Ok(T::convert16(out)),
                     _ => return Err(()),
                 }
-
             }
             Err(_) => {
                 return Err(());

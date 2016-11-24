@@ -5,6 +5,7 @@
 // We won't use the standard library because it requires OS abstractions like threads and files and
 // those are not available in this platform.
 #![no_std]
+#![feature(try_from)]
 
 #![feature(try_from)]
 
@@ -14,6 +15,7 @@ extern crate log;
 pub use self::UtilsDelay as MAP_UtilsDelay;
 
 pub mod simplelink;
+pub mod socket;
 
 extern "C" {
     // From board.c

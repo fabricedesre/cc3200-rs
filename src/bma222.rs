@@ -27,9 +27,7 @@ pub struct BMA222 {
 
 impl BMA222 {
     fn create(i2c: &I2C, dev_addr: u8) -> Option<BMA222> {
-        let bma222 = BMA222 {
-            sensor: I2CDevice::create(i2c, dev_addr)
-        };
+        let bma222 = BMA222 { sensor: I2CDevice::create(i2c, dev_addr) };
         if bma222.init() {
             return Some(bma222);
         }

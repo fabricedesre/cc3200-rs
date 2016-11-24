@@ -187,7 +187,12 @@ impl I2C {
         return Err(());
     }
 
-    pub fn read_from_with_length(&self, addr: u8, wr_data: &[u8], rd_data: &mut [u8], rd_len: u8) -> Result<(), ()> {
+    pub fn read_from_with_length(&self,
+                                 addr: u8,
+                                 wr_data: &[u8],
+                                 rd_data: &mut [u8],
+                                 rd_len: u8)
+                                 -> Result<(), ()> {
         if wr_data.len() > 255 || rd_data.len() > 255 {
             return Err(());
         }
