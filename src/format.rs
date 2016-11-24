@@ -12,6 +12,35 @@ pub fn fill_buf(buf: &mut [u8], fill_byte: u8) {
     }
 }
 
+pub fn format_hex_into(buf: &mut [u8], num: u32) -> bool {
+    if buf.len() < 1 {
+        return false;
+    }
+
+    let digit: &'static [u8; 16] = b"0123456789abcdef";
+    let mut buf_iter = buf.iter_mut().rev();
+    let mut num = num;
+    while let Some(ch) = buf_iter.next() {
+        *ch = digit[(num & 0x0f) as usize];
+        num >>= 4;
+    }
+    return true;
+}
+
+pub const FMT_MAC_ADDR_LEN: usize = 17;
+
+pub fn format_mac_addr_into(buf: &mut [u8; FMT_MAC_ADDR_LEN], mac_addr: [u8; 6]) -> bool {
+    buf.copy_from_slice(b"xx:xx:xx:xx:xx:xx");
+    format_hex_into(&mut buf[0..2], mac_addr[0] as u32);
+    format_hex_into(&mut buf[3..5], mac_addr[1] as u32);
+    format_hex_into(&mut buf[6..8], mac_addr[2] as u32);
+    format_hex_into(&mut buf[9..11], mac_addr[3] as u32);
+    format_hex_into(&mut buf[12..14], mac_addr[4] as u32);
+    format_hex_into(&mut buf[15..17], mac_addr[5] as u32);
+
+    return true;
+}
+
 pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) -> bool {
     if buf.len() < 1 {
         return false;

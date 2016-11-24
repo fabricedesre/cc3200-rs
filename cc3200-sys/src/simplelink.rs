@@ -1,13 +1,14 @@
 use core::convert::TryFrom;
 use core::fmt;
 
-// Redo c_like_enum using try_from: https://gist.github.com/anonymous/92537fff7c6a3d1ab048fcd38bdf08b4
+// Redo c_like_enum using try_from:
+// https://gist.github.com/anonymous/92537fff7c6a3d1ab048fcd38bdf08b4
 
 #[derive(Debug)]
 pub enum SimpleLinkError {
     Wlan(self::WlanError),
     Osi(self::OsiError),
-    ValueError(&'static str, i32)
+    ValueError(&'static str, i32),
 }
 
 impl From<self::WlanError> for SimpleLinkError {
@@ -28,9 +29,12 @@ impl fmt::Display for SimpleLinkError {
         match *self {
             SimpleLinkError::Wlan(e) => write!(formatter, "WlanError: {:?}", e),
             SimpleLinkError::Osi(e) => write!(formatter, "OsiError: {:?}", e),
-            SimpleLinkError::ValueError(ref enum_name, n)
-                => write!(formatter, "ValueError: Unknown enum value: {} for {}",
-                          n, enum_name)
+            SimpleLinkError::ValueError(ref enum_name, n) => {
+                write!(formatter,
+                       "ValueError: Unknown enum value: {} for {}",
+                       n,
+                       enum_name)
+            }
         }
     }
 }
@@ -217,15 +221,16 @@ c_like_enum! {
     }
 }
 
-// NetConfigGet only has an Id, and no opt, but we encode it the same way
-// as NetConfigSet for consistency.
+pub const SL_MAC_ADDR_LEN: usize = 6;
+
+// NetConfigGet only has an Id.
 c_like_enum! {
     NetConfigGet {
-        MacAddress = 0x0200,
-        Ipv4StaP2pClientGetInfo = 0x0301,
+        MacAddress = 0x02,
+        Ipv4StaP2pClientGetInfo = 0x03,
         Ipv4ApP2pGoGetInfo = 0x06,
-        Ipv4DhcpClient = 0x0900,
-        Ipv4DnsClient = 0x0a00
+        Ipv4DhcpClient = 0x09,
+        Ipv4DnsClient = 0x0a
     }
 }
 
@@ -259,7 +264,7 @@ c_like_enum! {
 
 #[repr(C)]
 pub struct WlanRxFilterOpBuf {
-    pub mask: [u8; 128/8],
+    pub mask: [u8; 128 / 8],
     padding: [u8; 4],
 }
 
@@ -267,7 +272,7 @@ impl WlanRxFilterOpBuf {
     pub fn all_filters() -> Self {
         WlanRxFilterOpBuf {
             mask: [0xff; 16],
-            padding: [0; 4]
+            padding: [0; 4],
         }
     }
 }
@@ -309,7 +314,7 @@ pub struct SlSecParamsExt {
     pub user_len: u8,
     pub anon_user: *const u8,
     pub anon_user_len: u8,
-    pub cert_index: u8,     // not supported
+    pub cert_index: u8, // not supported
     pub eap_method: u32,
 }
 
@@ -338,12 +343,13 @@ pub struct SlPingReport {
 #[repr(C)]
 #[derive(Default)]
 pub struct SlPingStartCommand {
-    pub ping_interval_time: u32,        // delay between pings, in milliseconds
-    pub ping_size: u16,                 // ping packet size in bytes
-    pub ping_request_timeout: u16,      // timeout time for every ping in milliseconds
-    pub total_number_of_attempts: u32,  // max number of ping requests. 0 = forever
-    pub flags: u32,                     // flag - 0 report only when finished, 1 - return response for every ping, 2 - stop after 1 successful ping.
-    pub ip: u32,                        // IPv4 address
+    pub ping_interval_time: u32, // delay between pings, in milliseconds
+    pub ping_size: u16, // ping packet size in bytes
+    pub ping_request_timeout: u16, // timeout time for every ping in milliseconds
+    pub total_number_of_attempts: u32, // max number of ping requests. 0 = forever
+    pub flags: u32, /* flag - 0 report only when finished, 1 - return response for
+                     * every ping, 2 - stop after 1 successful ping. */
+    pub ip: u32, // IPv4 address
     pub ip1_or_padding: u32,
     pub ip2_or_padding: u32,
     pub ip3_or_padding: u32,
@@ -368,7 +374,12 @@ extern "C" {
     pub fn sl_WlanProfileDel(index: i16) -> i16;
     pub fn sl_WlanDisconnect() -> i16;
 
-    pub fn sl_WlanConnect(ssid: *const u8, ssid_len: i16, mac_addr: *const u8, sec_params: *const SlSecParams, sec_params_ext: *const SlSecParamsExt) -> i16;
+    pub fn sl_WlanConnect(ssid: *const u8,
+                          ssid_len: i16,
+                          mac_addr: *const u8,
+                          sec_params: *const SlSecParams,
+                          sec_params_ext: *const SlSecParamsExt)
+                          -> i16;
 
     // From simplelink/wlan_rx_filter.h
 
@@ -377,15 +388,21 @@ extern "C" {
     // From simplelink/netcfg.h
 
     pub fn sl_NetCfgSet(config_id: u8, config_opt: u8, len: u8, val: *const u8) -> i32;
+    pub fn sl_NetCfgGet(config_id: u8, config_opt: *mut u8, len: *mut u8, val: *mut u8) -> i32;
 
     // From simplelink/netapp.h
 
-    pub fn sl_NetAppDnsGetHostByName(name: *const u8, name_len: u16, out_ip_addr: *mut u32, family: u8) -> i16;
+    pub fn sl_NetAppDnsGetHostByName(name: *const u8,
+                                     name_len: u16,
+                                     out_ip_addr: *mut u32,
+                                     family: u8)
+                                     -> i16;
     pub fn sl_NetAppMDNSUnRegisterService(name: *const u8, len: u8) -> i16;
     pub fn sl_NetAppPingStart(ping_params: *const SlPingStartCommand,
                               famliy: u8,
                               report: *mut SlPingReport,
-                              callback: Option<unsafe extern "C" fn(report: *mut SlPingReport)>) -> i16;
+                              callback: Option<unsafe extern "C" fn(report: *mut SlPingReport)>)
+                              -> i16;
 
     // From oslink/osi_freetros.c
 

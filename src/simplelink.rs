@@ -18,6 +18,19 @@ macro_rules! try_wlan {
     })
 }
 
+lazy_static! {
+    static ref UNIQUE_ID: u64 = {
+        let mut mac_addr: [u8; SL_MAC_ADDR_LEN] = [0; SL_MAC_ADDR_LEN];
+        if SimpleLink::netcfg_get_mac_addr(&mut mac_addr).is_ok() {
+            ((mac_addr[0] as u64) << 40) | ((mac_addr[1] as u64) << 32) |
+            ((mac_addr[2] as u64) << 24) | ((mac_addr[3] as u64) << 16) |
+            ((mac_addr[4] as u64) << 8) | (mac_addr[5] as u64)
+        } else {
+            0
+        }
+    };
+}
+
 pub struct SimpleLink { }
 
 impl SimpleLink {
@@ -88,6 +101,10 @@ impl SimpleLink {
         Ok(try!(WlanMode::try_from(rc)))
     }
 
+    pub fn unique_id() -> u64 {
+        *UNIQUE_ID
+    }
+
     // Net App
 
     pub fn netapp_get_host_by_name(name: &str) -> Result<u32, SimpleLinkError> {
@@ -134,6 +151,28 @@ impl SimpleLink {
         Ok(())
     }
 
+    pub fn netcfg_get(config: NetConfigGet,
+                      config_opt: Option<*mut u8>,
+                      result: &mut [u8])
+                      -> Result<&mut [u8], SimpleLinkError> {
+        let config_opt_ptr = if let Some(p) = config_opt {
+            p
+        } else {
+            ptr::null_mut()
+        };
+        let mut result_len = result.len() as u8;
+        try_wlan!(sl_NetCfgGet(config as u8,
+                               config_opt_ptr,
+                               &mut result_len,
+                               result.as_mut_ptr()) as i16);
+        Ok(unsafe { slice::from_raw_parts_mut(result.as_mut_ptr(), result_len as usize) })
+    }
+
+    pub fn netcfg_get_mac_addr(mac_addr: &mut [u8; self::SL_MAC_ADDR_LEN])
+                               -> Result<&mut [u8], SimpleLinkError> {
+        SimpleLink::netcfg_get(NetConfigGet::MacAddress, None, mac_addr)
+    }
+
     // WLAN
 
     pub fn wlan_delete_profile(index: i16) -> Result<(), SimpleLinkError> {
@@ -170,6 +209,7 @@ impl SimpleLink {
         try_wlan!(sl_WlanDisconnect());
         Ok(())
     }
+
     pub fn wlan_set(config: WlanConfig, val: &[u8]) -> Result<(), SimpleLinkError> {
         let config_id = ((config as u32 & 0xff00) >> 8) as u16;
         let config_opt = (config as u32 & 0x00ff) as u16;
