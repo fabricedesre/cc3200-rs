@@ -47,7 +47,10 @@ impl Channel for SocketChannel {
             Err(_) => return Err(ChannelError::InvalidHostName),
         };
 
-        // TODO: use getsockopt to set the TLS options is tls is true.
+        // TODO: use getsockopt to set the TLS options if tls is true.
+        if tls {
+            return Err(ChannelError::TlsUnsupported);
+        }
 
         let inaddr = SlSockAddrIn_t {
             sin_family: Family::AF_INET,
