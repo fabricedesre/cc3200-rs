@@ -22,6 +22,9 @@ extern crate log;
 #[macro_use]
 extern crate collections;
 
+extern crate freertos_rs;
+#[macro_use]
+extern crate lazy_static;
 extern crate smallhttp;
 
 #[macro_use]

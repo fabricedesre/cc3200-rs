@@ -23,10 +23,13 @@ extern crate log;
 #[macro_use]
 extern crate collections;
 
+use core::str;
+
 use cc3200::config;
 use cc3200::cc3200::{Board, LedEnum, LedName};
-use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError,
-                         SocketFamily, WlanConfig, WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
+use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, SocketFamily,
+                         WlanConfig, WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
+use cc3200::format;
 
 use freertos_rs::{CurrentTask, Duration, Task};
 
@@ -92,9 +95,25 @@ fn configure_simple_link_to_default() -> Result<(), Error> {
 
     println!("Host Driver Version: {}", SimpleLink::get_driver_version());
     println!("Build Version {}.{}.{}.{}.31.{}.{}.{}.{}.{}.{}.{}.{}",
-             ver.nwp_version[0], ver.nwp_version[1], ver.nwp_version[2], ver.nwp_version[3],
-             ver.fw_version[0], ver.fw_version[1], ver.fw_version[2], ver.fw_version[3],
-             ver.phy_version[0], ver.phy_version[1], ver.phy_version[2], ver.phy_version[3]);
+             ver.nwp_version[0],
+             ver.nwp_version[1],
+             ver.nwp_version[2],
+             ver.nwp_version[3],
+             ver.fw_version[0],
+             ver.fw_version[1],
+             ver.fw_version[2],
+             ver.fw_version[3],
+             ver.phy_version[0],
+             ver.phy_version[1],
+             ver.phy_version[2],
+             ver.phy_version[3]);
+
+    let mut mac_addr: [u8; simplelink::SL_MAC_ADDR_LEN] = [0; simplelink::SL_MAC_ADDR_LEN];
+    try!(SimpleLink::netcfg_get_mac_addr(&mut mac_addr));
+    let mut mac_addr_str: [u8; format::FMT_MAC_ADDR_LEN] = *b"00:00:00:00:00:00";
+    format::format_mac_addr_into(&mut mac_addr_str, mac_addr);
+    println!("Mac Addr: {}", str::from_utf8(&mac_addr_str).unwrap());
+    println!("UniqueId: {} or {0:#x}", SimpleLink::unique_id());
 
     // Set connection policy to Auto + SmartConfig
     //      (Device's default connection policy)
@@ -158,15 +177,18 @@ fn wlan_connect() -> Result<(), Error> {
     Ok(())
 }
 
-/*
-fn format_ip(ip: u32) -> String {
-    format!("{}.{}.{}.{}", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff)
-}
-*/
+// fn format_ip(ip: u32) -> String {
+// format!("{}.{}.{}.{}", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff)
+// }
+//
 
 fn ping_ip(ip: u32) -> Result<(), Error> {
 
-    info!("Pinging {}.{}.{}.{} ...", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
+    info!("Pinging {}.{}.{}.{} ...",
+          (ip >> 24) & 0xff,
+          (ip >> 16) & 0xff,
+          (ip >> 8) & 0xff,
+          ip & 0xff);
 
     let ping_params = simplelink::SlPingStartCommand {
         ping_interval_time: PING_INTERVAL,
