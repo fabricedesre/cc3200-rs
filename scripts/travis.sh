@@ -12,6 +12,8 @@ xargo --version
 rustc --version
 arm-none-eabi-gcc --version
 
+cp src/config.rs.sample src/config.rs
+
 for example_file in examples/*.rs; do
     example=$(basename ${example_file/.rs/})
     ./build.sh --example ${example}
