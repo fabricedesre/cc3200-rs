@@ -1,9 +1,6 @@
 use core::convert::TryFrom;
 use core::fmt;
 
-// Redo c_like_enum using try_from:
-// https://gist.github.com/anonymous/92537fff7c6a3d1ab048fcd38bdf08b4
-
 #[derive(Debug)]
 pub enum SimpleLinkError {
     Wlan(self::WlanError),

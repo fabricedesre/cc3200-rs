@@ -165,7 +165,7 @@ impl SimpleLink {
                                config_opt_ptr,
                                &mut result_len,
                                result.as_mut_ptr()) as i16);
-        Ok(unsafe { slice::from_raw_parts_mut(result.as_mut_ptr(), result_len as usize) })
+        Ok(&mut result[0..result_len as usize])
     }
 
     pub fn netcfg_get_mac_addr(mac_addr: &mut [u8; self::SL_MAC_ADDR_LEN])
