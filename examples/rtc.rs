@@ -17,8 +17,10 @@ extern crate freertos_alloc;
 #[macro_use]
 extern crate log;
 
+use core::str;
 use cc3200::cc3200::Board;
 use cc3200::rtc::RTC;
+use cc3200::time::Tm;
 use freertos_rs::{CurrentTask, Duration, Task};
 
 pub fn rtc_demo() {
@@ -43,6 +45,17 @@ pub fn rtc_demo() {
         CurrentTask::delay(Duration::ms(1000));
         println!("RTC = 0x{:09x}", RTC::get());
     }
+
+    println!("Setting RTC to 1483228798 2016-12-31 23:59:58");
+    RTC::set(1483228798);
+    for _ in 0..10 {
+        let mut buf: [u8; 24] = [0; 24];
+        let tm = Tm::gmtime(RTC::get());
+        tm.format_iso_into(&mut buf);
+        println!("RTC = 0x{:x} {}", RTC::get(), str::from_utf8(&buf).unwrap());
+        CurrentTask::delay(Duration::ms(1000));
+    }
+
     println!("Done");
 }
 
