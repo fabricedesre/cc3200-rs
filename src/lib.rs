@@ -39,7 +39,6 @@ pub mod tmp006;
 pub mod rtc;
 pub mod simplelink;
 pub mod socket_channel;
-pub mod config; // SSID and password currently set here
 
 // We need to make sure that we pull in soft float versions of libm.a, libc.a
 // and libgcc.a. The build.rs sets up the paths needed for these.
