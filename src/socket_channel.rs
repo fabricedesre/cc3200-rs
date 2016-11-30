@@ -44,7 +44,10 @@ impl Channel for SocketChannel {
         // Convert the host name into a socket address.
         let addr = match SimpleLink::netapp_get_host_by_name(host) {
             Ok(addr) => addr,
-            Err(_) => return Err(ChannelError::InvalidHostName),
+            Err(err) => {
+                error!("Unable to resolve {} : {}", host, err);
+                return Err(ChannelError::InvalidHostName);
+            }
         };
 
         // TODO: use getsockopt to set the TLS options if tls is true.
