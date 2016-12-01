@@ -25,7 +25,6 @@ extern crate log;
 #[macro_use]
 extern crate collections;
 
-use cc3200::config;
 use cc3200::cc3200::{Board, I2C, I2COpenMode, LedEnum, LedName};
 use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, WlanConfig,
                          WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
@@ -37,6 +36,8 @@ use cc3200::tmp006::TMP006;
 use freertos_rs::{CurrentTask, Duration, Task};
 use smallhttp::Client;
 use smallhttp::traits::Channel;
+
+mod config;
 
 static VERSION: &'static str = "1.0";
 
