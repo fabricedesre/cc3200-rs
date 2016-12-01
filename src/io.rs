@@ -62,8 +62,8 @@ impl File {
     }
 
     /// Opens a file for writing; possibly creating it in the process
-    pub fn create(file_name: &str) -> Result<File, SimpleLinkError> {
-        File::open_with_mode(file_name, File::mode(true, true, 57344))
+    pub fn create(file_name: &str, max_len: usize) -> Result<File, SimpleLinkError> {
+        File::open_with_mode(file_name, File::mode(true, true, max_len as u32))
     }
 
     // Returns the file-open mode
