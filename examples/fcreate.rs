@@ -26,12 +26,10 @@ extern crate log;
 extern crate collections;
 
 use cc3200::cc3200::{Board};
-use cc3200::simplelink::{SimpleLink, SimpleLinkError};
-use cc3200::io::{File, Read, Seek, Write};
+use cc3200::simplelink::{FileSystemError, SimpleLink, SimpleLinkError};
+use cc3200::io::{File};
 
 use freertos_rs::{Task};
-
-use collections::String;
 
 static VERSION: &'static str = "1.0";
 
@@ -55,29 +53,44 @@ macro_rules! ignore {
     })
 }
 
-fn fileio_demo() -> Result<(), Error> {
+fn fcreate_demo() -> Result<(), Error> {
 
     try!(SimpleLink::start_spawn_task());
     SimpleLink::init_app_variables();
     try!(SimpleLink::start());
 
     let filename = "myfile.txt";
-    let test_string = "Hello world";
 
-    // 1) Remove test file, if any
+    let mut lbound = 0 as usize; // always available
+    let mut ubound = 1024 * 1024 as usize; // not available
 
-    ignore!(File::remove(filename));
+    println!("Detecting maximum file length... (might take a moment)");
 
-    // 2) Write test file
+    loop {
+        ignore!(File::remove(filename));
 
-    {
-        println!("Writing string \"{}\"", test_string);
+        let len = (ubound + lbound) / 2;
 
-        let mut file = try!(File::create(filename, 16));
-        try!(file.write(test_string.as_bytes()));
+        match File::create(filename, len) {
+            Ok(_) => {
+                lbound = len;
+                if lbound + 1 == ubound {
+                    break; // found maximum length
+                }
+            },
+            Err(_) => {
+                ubound = len;
+            }
+        };
+
+        if lbound == ubound {
+            // cannot legally happen in practice
+            println!("Recursion bug detected");
+            return Err(Error::from(SimpleLinkError::FileSystem(FileSystemError::UNKNOWN)))
+        }
     }
 
-    // 3) Get file info
+    println!("Maximum detected file length is {} bytes", lbound);
 
     let info = try!(File::get_info(filename));
 
@@ -88,20 +101,7 @@ fn fileio_demo() -> Result<(), Error> {
     println!("        tokens=({}, {}, {}, {})",
                 info.token[0], info.token[1], info.token[2], info.token[3]);
 
-
-    // 4) Read test file
-
-    let mut file = try!(File::open(filename));
-
-    let mut str = String::new();
-    try!(file.read_to_string(&mut str)); // "Hello world"
-
-    println!("Read string \"{}\"", str);
-
-    try!(file.seek(6));
-    try!(file.read_to_string(&mut str)); // "world"
-
-    println!("Read string \"{}\" at offset 6", str);
+    ignore!(File::remove(filename));
 
     Ok(())
 }
@@ -118,16 +118,16 @@ pub fn start() -> ! {
 
     Board::init();
 
-    println!("Welcome to CC3200 File I/O example {}", VERSION);
+    println!("Welcome to CC3200 fcreate example {}", VERSION);
 
     let _client = {
         Task::new()
             .name("client")
             .stack_size(2048) // 32-bit words
             .start(|| {
-                match fileio_demo() {
-                    Ok(())  => { println!("fileio_demo succeeded"); },
-                    Err(e)  => { println!("fileio_demo failed: {:?}", e); },
+                match fcreate_demo() {
+                    Ok(())  => { println!("fcreate_demo succeeded"); },
+                    Err(e)  => { println!("fcreate_demo failed: {:?}", e); },
                 };
                 loop {}
             })
