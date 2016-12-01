@@ -25,13 +25,14 @@ extern crate collections;
 
 use core::str;
 
-use cc3200::config;
 use cc3200::cc3200::{Board, LedEnum, LedName};
 use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, SocketFamily,
                          WlanConfig, WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
 use cc3200::format;
 
 use freertos_rs::{CurrentTask, Duration, Task};
+
+mod config;
 
 static VERSION: &'static str = "1.0";
 static HOST_NAME: &'static str = "www.ti.com";

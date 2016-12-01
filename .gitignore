@@ -3,4 +3,4 @@ openocd.log
 firmware.map
 Cargo.lock
 *.bk
-src/config.rs
+examples/config.rs

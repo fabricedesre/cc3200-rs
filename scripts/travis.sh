@@ -12,7 +12,7 @@ xargo --version
 rustc --version
 arm-none-eabi-gcc --version
 
-cp src/config.rs.sample src/config.rs
+cp examples/config.rs.sample examples/config.rs
 
 for example_file in examples/*.rs; do
     example=$(basename ${example_file/.rs/})
