@@ -16,6 +16,7 @@ static TMP006_DEVICE_ID_REG_ADDR: u8 = 0xFF;
 static TMP006_MANUFAC_ID: u16 = 0x5449;
 static TMP006_DEVICE_ID: u16 = 0x0067;
 
+#[derive(Clone, Copy)]
 pub struct TMP006 {
     sensor: I2CDevice,
 }

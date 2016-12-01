@@ -21,6 +21,7 @@ static BMA222_ACC_DATA_X_NEW: u8 = 0x2;
 // static BMA222_ACC_DATA_Z_NEW: u8 = 0x6;
 // static BMA222_ACC_DATA_Z: u8 = 0x7;
 
+#[derive(Clone, Copy)]
 pub struct BMA222 {
     sensor: I2CDevice,
 }

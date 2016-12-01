@@ -4,6 +4,7 @@
 
 use cc3200::I2C;
 
+#[derive(Clone, Copy)]
 pub struct I2CDevice {
     pub i2c: I2C,
     pub dev_addr: u8,
