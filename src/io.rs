@@ -58,17 +58,17 @@ impl File {
 
     /// Opens a file for reading
     pub fn open(file_name: &str) -> Result<File, SimpleLinkError> {
-        File::open_with_mode(file_name, File::mode(false, false, 0))
+        File::open_with_mode(file_name, File::mode(false, false, false, 0))
     }
 
     /// Opens a file for writing; possibly creating it in the process
-    pub fn create(file_name: &str, max_len: usize) -> Result<File, SimpleLinkError> {
-        File::open_with_mode(file_name, File::mode(true, true, max_len as u32))
+    pub fn create(file_name: &str, max_len: usize, failsafe: bool) -> Result<File, SimpleLinkError> {
+        File::open_with_mode(file_name, File::mode(true, true, failsafe, max_len as u32))
     }
 
     // Returns the file-open mode
-    fn mode(write: bool, create: bool, max_size: u32) -> u32 {
-        unsafe { sl_FsMode(write, create, max_size) }
+    fn mode(write: bool, create: bool, failsafe: bool, max_size: u32) -> u32 {
+        unsafe { sl_FsMode(write, create, failsafe, max_size) }
     }
 
     // Open file with the specified mode

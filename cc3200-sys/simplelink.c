@@ -225,11 +225,11 @@ void SimpleLinkPingReport(SlPingReport_t *pPingReport)
     g_ulPingPacketsRecv = pPingReport->PacketsReceived;
 }
 
-_u32 sl_FsMode(bool write, bool create, _u32 maxCreateSize)
+_u32 sl_FsMode(bool write, bool create, bool failsafe, _u32 maxCreateSize)
 {
     if (create) {
-        return FS_MODE_OPEN_CREATE(maxCreateSize,
-                                   _FS_FILE_OPEN_FLAG_COMMIT);
+        _u32 flags = failsafe ? _FS_FILE_OPEN_FLAG_COMMIT : 0;
+        return FS_MODE_OPEN_CREATE(maxCreateSize, flags);
     } else if (write) {
         return FS_MODE_OPEN_WRITE;
     }
