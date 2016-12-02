@@ -73,7 +73,7 @@ fn fileio_demo() -> Result<(), Error> {
     {
         println!("Writing string \"{}\"", test_string);
 
-        let mut file = try!(File::create(filename, 16));
+        let mut file = try!(File::create(filename, 16, false));
         try!(file.write(test_string.as_bytes()));
     }
 

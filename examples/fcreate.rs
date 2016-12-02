@@ -71,7 +71,7 @@ fn fcreate_demo() -> Result<(), Error> {
 
         let len = (ubound + lbound) / 2;
 
-        match File::create(filename, len) {
+        match File::create(filename, len, false) {
             Ok(_) => {
                 lbound = len;
                 if lbound + 1 == ubound {

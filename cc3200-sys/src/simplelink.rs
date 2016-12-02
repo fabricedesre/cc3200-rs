@@ -536,5 +536,5 @@ extern "C" {
 
     // simplelink.c
 
-    pub fn sl_FsMode(write: bool, create: bool, max_size: u32) -> u32;
+    pub fn sl_FsMode(write: bool, create: bool, failsafe: bool, max_size: u32) -> u32;
 }
