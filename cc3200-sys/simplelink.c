@@ -229,8 +229,7 @@ _u32 sl_FsMode(bool write, bool create, _u32 maxCreateSize)
 {
     if (create) {
         return FS_MODE_OPEN_CREATE(maxCreateSize,
-                                   _FS_FILE_OPEN_FLAG_COMMIT |
-                                   _FS_FILE_PUBLIC_WRITE);
+                                   _FS_FILE_OPEN_FLAG_COMMIT);
     } else if (write) {
         return FS_MODE_OPEN_WRITE;
     }
