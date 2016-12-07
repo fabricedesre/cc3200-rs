@@ -178,3 +178,130 @@ impl Seek for File {
         Ok(self.offset as u64)
     }
 }
+
+//
+// Image files
+//
+
+pub struct Image {
+    offset: usize,
+    file_handle: i32,
+}
+
+impl Image {
+    /// Opens an image for reading
+    pub fn open(file_name: &str) -> Result<Image, SimpleLinkError> {
+        Image::open_with_mode(file_name, Image::mode(false, false, 0), 0)
+    }
+
+    /// Opens an image for writing; possibly creating it in the process
+    pub fn create(file_name: &str, max_len: usize) -> Result<Image, SimpleLinkError> {
+        Image::open_with_mode(file_name,
+                              Image::mode(true, true, max_len as u32),
+                              max_len)
+    }
+
+    /// Opens the next image for updating; the filename is selected automatically
+    pub fn update(max_len: usize) -> Result<Image, SimpleLinkError> {
+        // The filename is a magic string that selects the next image.
+        Image::create("/sys/mcuimgA.bin", max_len)
+    }
+
+    /// Reverts changes to an open image
+    pub fn revert(&self) -> Result<(), SimpleLinkError> {
+        try_fs!(sl_extlib_FlcAbortFile(self.file_handle));
+        Ok(())
+    }
+
+    // Returns the file-open mode
+    fn mode(write: bool, create: bool, max_size: u32) -> u32 {
+        unsafe { sl_FsMode(write, create, false, max_size) }
+    }
+
+    // Open image with the specified mode
+    fn open_with_mode(file_name: &str, mode: u32, max_len: usize) -> Result<Image, SimpleLinkError> {
+        let mut file_handle = -1 as i32;
+        try_fs!(sl_extlib_FlcOpenFile(file_name.as_ptr(),
+                                      max_len as i32,
+                                      ptr::null(),
+                                      &mut file_handle,
+                                      mode as i32));
+        Ok(Image { offset: 0, file_handle: file_handle })
+    }
+
+    // Read at specific offset
+    fn read_at(&self, buf: &mut[u8], offset: usize) -> Result<usize, SimpleLinkError> {
+        Ok(try_fs!(sl_extlib_FlcReadFile(self.file_handle,
+                                         offset as i32,
+                                         buf.as_mut_ptr(),
+                                         buf.len() as i32)) as usize)
+    }
+
+    // Write at specific offset
+    fn write_at(&self, buf: &[u8], offset: usize) -> Result<usize, SimpleLinkError> {
+        Ok(try_fs!(sl_extlib_FlcWriteFile(self.file_handle,
+                                          offset as i32,
+                                          buf.as_ptr(),
+                                          buf.len() as i32)) as usize)
+    }
+}
+
+impl Drop for Image {
+    fn drop(&mut self) {
+        unsafe {
+            sl_extlib_FlcCloseFile(self.file_handle, ptr::null(), ptr::null(), 0);
+        }
+    }
+}
+
+impl Read for Image {
+    fn read(&mut self, buf: &mut[u8]) -> Result<usize, SimpleLinkError> {
+        let len = try!(self.read_at(buf, self.offset));
+        self.offset += len;
+        Ok(len)
+    }
+
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize, SimpleLinkError> {
+
+        let incr_buffer_size = 64;
+
+        let mut offset = self.offset;
+        let mut len = 0; // number of valid bytes in buf
+
+        loop {
+            if len == buf.len() {
+                let resize = buf.len() + incr_buffer_size;
+                buf.resize(resize, 0);
+            }
+
+            let readlen = try!(self.read_at(&mut buf[len..], offset));
+
+            len += readlen;
+            offset += readlen;
+
+            if len < buf.len() {
+                break; // EOF
+            }
+        }
+
+        buf.truncate(len);
+        self.offset = offset;
+
+        Ok(len)
+    }
+}
+
+impl Write for Image {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, SimpleLinkError> {
+        let len = try!(self.write_at(buf, self.offset));
+        self.offset += len;
+        Ok(len)
+    }
+}
+
+impl Seek for Image {
+    fn seek(&mut self, pos: u64) -> Result<u64, SimpleLinkError> {
+        self.offset = pos as usize;
+        Ok(self.offset as u64)
+    }
+}
