@@ -22,10 +22,30 @@ macro_rules! try_fs {
     })
 }
 
+//
+// I/O traits
+//
+
 pub trait Read {
     fn read(&mut self, buf: &mut[u8]) -> Result<usize, SimpleLinkError>;
     fn read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize, SimpleLinkError>;
-    fn read_to_string(&mut self, str: &mut String) -> Result<usize, SimpleLinkError>;
+
+    fn read_to_string(&mut self, str: &mut String) -> Result<usize, SimpleLinkError> {
+        let mut buf: Vec<u8> = Vec::new();
+        let len = self.read_to_end(&mut buf)?;
+
+        match String::from_utf8(buf) {
+            Ok(res) => {
+                str.clear();
+                str.push_str(&res);
+            },
+            Err(_) => {
+                return Result::Err(SimpleLinkError::FileSystem(FileSystemError::NOT_SUPPORTED))
+            },
+        }
+
+        Ok(len)
+    }
 }
 
 pub trait Write {
@@ -35,6 +55,10 @@ pub trait Write {
 pub trait Seek {
     fn seek(&mut self, pos: u64) -> Result<u64, SimpleLinkError>;
 }
+
+//
+// User files
+//
 
 pub struct File {
     offset: usize,
@@ -149,23 +173,6 @@ impl Read for File {
 
         buf.truncate(len);
         self.offset = offset;
-
-        Ok(len)
-    }
-
-    fn read_to_string(&mut self, str: &mut String) -> Result<usize, SimpleLinkError> {
-        let mut buf: Vec<u8> = Vec::new();
-        let len = try!(self.read_to_end(&mut buf));
-
-        match String::from_utf8(buf) {
-            Ok(res) => {
-                str.clear();
-                str.push_str(&res);
-            },
-            Err(_) => {
-                return Result::Err(SimpleLinkError::FileSystem(FileSystemError::NOT_SUPPORTED))
-            },
-        }
 
         Ok(len)
     }
