@@ -443,6 +443,26 @@ pub struct SlFsFileInfo {
     pub token: [u32; 4]
 }
 
+// Image file paths
+pub const IMG_BOOT_INFO       : &'static str = "/sys/mcubootinfo.bin";
+pub const IMG_FACTORY_DEFAULT : &'static str = "/sys/mcuimg1.bin";
+pub const IMG_USER_1          : &'static str = "/sys/mcuimg2.bin";
+pub const IMG_USER_2          : &'static str = "/sys/mcuimg3.bin";
+
+// Image status
+pub const IMG_STATUS_TESTING   : u32 = 0x12344321;
+pub const IMG_STATUS_TESTREADY : u32 = 0x56788765;
+pub const IMG_STATUS_NOTEST    : u32 = 0xabcddcba;
+
+// Commit/abort update
+pub const FLC_COMMITED     : i32 = 1;
+pub const FLC_NOT_COMMITED : i32 = 0;
+
+// Reset flags
+pub const FLC_TEST_RESET_MCU          : i32 = 0x1;
+pub const FLC_TEST_RESET_NWP          : i32 = 0x2;
+pub const FLC_TEST_RESET_MCU_WITH_APP : i32 = 0x4;
+
 extern "C" {
     // From simplelink/device.h
 
@@ -541,4 +561,32 @@ extern "C" {
     // simplelink.c
 
     pub fn sl_FsMode(write: bool, create: bool, failsafe: bool, max_size: u32) -> u32;
+
+    // FLC and OTA
+    //
+
+    // from simplelink_ext/include/flc_api.h
+
+    pub fn sl_extlib_FlcOpenFile(file_name: *const u8,
+                                 file_size: i32,
+                                 token: *const u32,
+                                 file_handle: *mut i32,
+                                 flags: i32) -> i32;
+    pub fn sl_extlib_FlcCloseFile(file_handle: i32,
+                                  certificate_file_name: *const u8,
+                                  signature: *const u8,
+                                  signature_length: u32) -> i16;
+    pub fn sl_extlib_FlcReadFile(file_handle: i32,
+                                 offset: i32,
+                                 data: *mut u8,
+                                 len: i32) -> i32;
+    pub fn sl_extlib_FlcWriteFile(file_handle: i32,
+                                  offset: i32,
+                                  data: *const u8,
+                                  len: i32) -> i32;
+    pub fn sl_extlib_FlcAbortFile(file_handle: i32) -> i32;
+
+    pub fn sl_extlib_FlcCommit(flags: i32) -> i32;
+    pub fn sl_extlib_FlcTest(flags: i32) -> i32;
+    pub fn sl_extlib_FlcIsPendingCommit() -> i32;
 }
