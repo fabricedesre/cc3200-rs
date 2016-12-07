@@ -12,3 +12,7 @@ pub fn security_params() -> Option<SlSecParams> {
     //Some(SlSecParams::wpa2("YOUR-PASSWORD-HERE"))
     None
 }
+
+// Update URL for simple-ota demo
+#[allow(dead_code)]
+pub const SIMPLE_OTA_URL: &'static str = "http://example.com/mcuimg.bin";
