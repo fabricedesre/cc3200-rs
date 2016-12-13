@@ -16,6 +16,7 @@ freertos_alloc = { path = "freertos_alloc" }
 freertos_rs = "0.1"
 lazy_static = { version = "0.2", features = [ "spin_no_std" ] }
 log = { version = "0.3", default-features = false }
+numeric_utils = { path = "numeric_utils" }
 smallhttp = { git = "https://github.com/fabricedesre/smallhttp.git" }
 
 [profile.dev]

@@ -16,6 +16,7 @@ extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
 extern crate freertos_alloc;
+extern crate numeric_utils;
 
 #[macro_use]
 extern crate log;
@@ -28,7 +29,7 @@ use core::str;
 use cc3200::cc3200::{Board, LedEnum, LedName};
 use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, SocketFamily,
                          WlanConfig, WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
-use cc3200::format;
+use numeric_utils::format;
 
 use freertos_rs::{CurrentTask, Duration, Task};
 

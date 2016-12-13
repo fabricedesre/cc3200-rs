@@ -26,13 +26,13 @@ extern crate freertos_rs;
 #[macro_use]
 extern crate lazy_static;
 extern crate smallhttp;
+extern crate numeric_utils;
 
 #[macro_use]
 pub mod logger;
 pub mod cc3200;
 pub mod i2c_devices;
 pub mod isr_vectors;
-pub mod format;
 pub mod time;
 
 pub mod bma222;

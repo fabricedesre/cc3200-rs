@@ -16,6 +16,10 @@ cp examples/config.rs.sample examples/config.rs
 
 for example_file in examples/*.rs; do
     example=$(basename ${example_file/.rs/})
-    ./build.sh --example ${example}
-    ./build.sh --example ${example} --release
+    if [ "${example}" != "config" ]; then
+        ./build.sh --example ${example}
+        ./build.sh --example ${example} --release
+    fi
 done
+
+cd numeric_utils && cargo test
