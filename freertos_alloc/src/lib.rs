@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at http://mozilla.org/MPL/2.0/.
+
 // The compiler needs to be instructed that this crate is an allocator in order
 // to realize that when this is linked in another allocator like jemalloc should
 // not be linked in
