@@ -3,7 +3,7 @@
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use collections::string::String;
-use format::format_int_into;
+use numeric_utils::format_int_into;
 
 pub type Seconds = i64;
 

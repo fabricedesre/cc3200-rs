@@ -16,6 +16,7 @@ extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
 extern crate freertos_alloc;
+extern crate numeric_utils;
 
 use cc3200::cc3200::Board;
 use freertos_rs::Task;
@@ -26,7 +27,7 @@ extern crate collections;
 use core::str;
 use collections::string::String;
 
-use cc3200::format::{format_int_into, format_float_into};
+use numeric_utils::{format_int_into, format_float_into};
 
 fn buf_find(buf: &[u8], needle: &str) -> Option<usize> {
     if let Ok(s) = str::from_utf8(buf) {
