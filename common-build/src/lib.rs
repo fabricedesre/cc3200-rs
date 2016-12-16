@@ -11,6 +11,9 @@ extern crate gcc;
 pub fn gcc_config() -> gcc::Config {
     let mut config = gcc::Config::new();
     config.compiler("arm-none-eabi-gcc")
+        // Always compile using -Os. For debug builds, this reduces the code
+        // size by about 30K
+        .opt_level_str("s")
         .define("gcc", None)
         .define("USE_FREERTOS", None)
         .define("SL_PLATFORM_MULTI_THREADED", None)
