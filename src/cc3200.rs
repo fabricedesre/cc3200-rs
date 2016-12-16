@@ -10,6 +10,7 @@ use core::result::Result;
 use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_LedOff,
                        MAP_UtilsDelay, I2C_IF_Open, I2C_IF_Close, I2C_IF_Write, I2C_IF_Read,
                        I2C_IF_ReadFrom};
+use self::cc3200_sys::simplelink::*;
 use logger::SimpleLogger;
 use rtc::RTC;
 
@@ -211,6 +212,48 @@ impl I2C {
     pub fn read_from(&self, addr: u8, wr_data: &[u8], rd_data: &mut [u8]) -> Result<(), ()> {
         let len = rd_data.len() as u8;
         self.read_from_with_length(addr, wr_data, rd_data, len)
+    }
+}
+
+pub struct Update { }
+
+impl Update {
+
+    /// Sets the application to test mode
+    pub fn test() -> bool {
+        let res = unsafe {
+            sl_extlib_FlcTest(FLC_TEST_RESET_MCU |
+                              FLC_TEST_RESET_MCU_WITH_APP)
+        };
+        Update::reset_is_required(res)
+    }
+
+    /// Returns true if the application runs in testing mode, false otherwise
+    pub fn is_testing() -> bool {
+        let res = unsafe {
+            sl_extlib_FlcIsPendingCommit()
+        };
+        res != 0
+    }
+
+    /// Commits all changes, moving the application state from 'testing' to 'stable'
+    pub fn commit() -> bool {
+        let res = unsafe {
+            sl_extlib_FlcCommit(FLC_COMMITED)
+        };
+        Update::reset_is_required(res)
+    }
+
+    /// Aborts the update
+    pub fn abort() -> bool {
+        let res = unsafe {
+            sl_extlib_FlcCommit(FLC_NOT_COMMITED)
+        };
+        Update::reset_is_required(res)
+    }
+
+    fn reset_is_required(flags: i32) -> bool {
+        (flags & (FLC_TEST_RESET_MCU | FLC_TEST_RESET_NWP)) != 0
     }
 }
 
