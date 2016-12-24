@@ -12,6 +12,9 @@
 #![feature(collections)]
 
 #[macro_use]
+extern crate cfg_if;
+
+#[macro_use]
 extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
@@ -25,17 +28,11 @@ extern crate log;
 #[macro_use]
 extern crate collections;
 
-use cc3200::cc3200::{Board, I2C, I2COpenMode, LedEnum, LedName};
+use cc3200::cc3200::{Board, LedEnum, LedName};
 use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, WlanConfig,
                          WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
-use cc3200::socket_channel::SocketChannel;
-
-use cc3200::i2c_devices::TemperatureSensor;
-use cc3200::tmp006::TMP006;
 
 use freertos_rs::{CurrentTask, Duration, Task};
-use smallhttp::Client;
-use smallhttp::traits::Channel;
 
 mod config;
 
@@ -48,6 +45,7 @@ pub enum AppError {
     PING_FAILED,
     INTERNET_CONNECTION_FAILED,
     LAN_CONNECTION_FAILED,
+    NO_TEMPERATURE_SENSOR_CONFIGURED,
 }
 
 #[derive(Debug)]
@@ -170,6 +168,50 @@ fn wlan_connect() -> Result<(), Error> {
     Ok(())
 }
 
+cfg_if! {
+    if #[cfg(feature = "temperature-tmp006")] {
+
+        use smallhttp::Client;
+        use smallhttp::traits::Channel;
+        use cc3200::socket_channel::SocketChannel;
+        use cc3200::cc3200::{I2C, I2COpenMode};
+        use cc3200::tmp006::TMP006;
+        use cc3200::i2c_devices::TemperatureSensor;
+
+        fn report_temperatures() -> Result<(), Error> {
+            let i2c = I2C::open(I2COpenMode::MasterModeFst).unwrap();
+            let temp_sensor = TMP006::default(&i2c).unwrap();
+
+            println!("Will now send temperature to the server...");
+
+            loop {
+                let temperature: u32 = (temp_sensor.get_temperature().unwrap() * 10.0) as u32;
+                info!("Feels like {}.{} C", temperature / 10, temperature % 10);
+                let mut client = Client::new(SocketChannel::new().unwrap());
+                let response = client.get("http://10.252.33.245:8000/endpoint")
+                    .open()
+                    .unwrap()
+                    .send(&[])
+                    .unwrap()
+                    .response(|_| false)
+                    .unwrap();
+                let mut buffer = [0u8; 256];
+                info!("Received {}",
+                      response.body.read_string_to_end(&mut buffer).unwrap());
+                CurrentTask::delay(Duration::ms(1000))
+            }
+            Ok(())
+        }
+    } else {
+
+        fn report_temperatures() -> Result<(), Error> {
+            println!("No temperature sensor configured...");
+            return Err(Error::App(AppError::NO_TEMPERATURE_SENSOR_CONFIGURED));
+        }
+    }
+}
+
+
 fn wlan_station_mode() -> Result<(), Error> {
     SimpleLink::init_app_variables();
 
@@ -184,27 +226,7 @@ fn wlan_station_mode() -> Result<(), Error> {
 
     println!("Connection established w/ AP and IP is aquired");
 
-    let i2c = I2C::open(I2COpenMode::MasterModeFst).unwrap();
-    let temp_sensor = TMP006::default(&i2c).unwrap();
-
-    println!("Will now send temperature to the server...");
-
-    loop {
-        let temperature: u32 = (temp_sensor.get_temperature().unwrap() * 10.0) as u32;
-        info!("Feels like {}.{} C", temperature / 10, temperature % 10);
-        let mut client = Client::new(SocketChannel::new().unwrap());
-        let response = client.get("http://10.252.33.245:8000/endpoint")
-            .open()
-            .unwrap()
-            .send(&[])
-            .unwrap()
-            .response(|_| false)
-            .unwrap();
-        let mut buffer = [0u8; 256];
-        info!("Received {}",
-              response.body.read_string_to_end(&mut buffer).unwrap());
-        CurrentTask::delay(Duration::ms(1000))
-    }
+    try!(report_temperatures());
 
     Ok(())
 }

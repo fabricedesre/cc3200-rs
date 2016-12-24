@@ -36,7 +36,10 @@ pub mod isr_vectors;
 pub mod time;
 
 pub mod bma222;
+
+#[cfg(feature = "temperature-tmp006")]
 pub mod tmp006;
+
 pub mod rtc;
 pub mod simplelink;
 pub mod io;
