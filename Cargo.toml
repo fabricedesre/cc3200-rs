@@ -12,7 +12,7 @@ common-build = { path = "common-build" }
 
 [dependencies]
 cc3200-sys = { path = "cc3200-sys" }
-cfg-if = { git = "https://github.com/dhylands/cfg-if", rev = "c0d704" }
+cfg-if = { git = "https://github.com/alexcrichton/cfg-if" }
 freertos_alloc = { path = "freertos_alloc" }
 freertos_rs = "0.1"
 lazy_static = { version = "0.2", features = [ "spin_no_std" ] }
