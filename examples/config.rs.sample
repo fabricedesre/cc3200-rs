@@ -16,3 +16,7 @@ pub fn security_params() -> Option<SlSecParams> {
 // Update URL for simple-ota demo
 #[allow(dead_code)]
 pub const SIMPLE_OTA_URL: &'static str = "http://example.com/mcuimg.bin";
+
+// Update URL for full-ota demo
+#[allow(dead_code)]
+pub const FULL_OTA_URL: &'static str = "http://example.com/mcuimg.bin";
