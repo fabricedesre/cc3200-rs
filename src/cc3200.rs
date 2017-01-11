@@ -15,6 +15,14 @@ use logger::SimpleLogger;
 use rtc::RTC;
 use io::{File, Read, Write};
 
+macro_rules! ignore {
+    ($e:expr) => ({
+        match $e {
+            _ => { },
+        }
+    })
+}
+
 #[allow(non_camel_case_types, dead_code)]
 pub enum LedName {
     NO_LED_IND = 0,
@@ -267,6 +275,26 @@ impl BootInfo {
     pub fn factory_reset() -> BootInfo {
         BootInfo::new(0, ImageStatus::NOTEST)
     }
+
+    /// Returns the currently active image's filename
+    pub fn image_filename(&self) -> &'static str {
+        match self.active_image {
+            0 => IMG_FACTORY_DEFAULT,
+            1 => IMG_USER_1,
+            2 => IMG_USER_2,
+            _ => IMG_FACTORY_DEFAULT
+        }
+    }
+
+    /// Returns the filename of the image to update
+    pub fn next_image_filename(&self) -> &'static str {
+        // If we booted from image 1, we update image 2; in any other case
+        // we update image 1. This mirrors the behavior of the TI SDK.
+        match self.active_image {
+            1 => IMG_USER_2,
+            _ => IMG_USER_1
+        }
+    }
 }
 
 pub struct Update { }
@@ -320,6 +348,40 @@ impl Update {
             }
         };
         Ok(boot_info)
+    }
+
+    /// Opens the next image for updating; the filename is selected automatically
+    pub fn next_image(max_len: usize) -> Result<File, SimpleLinkError> {
+        // The TI filesystem doesn't resize files dynamically. Hence, if
+        // the image file already exists and is too small, we cannot use
+        // it for the update.
+        //
+        // Below, we read the boot-info file to get next image's filename and
+        // its size. We remove the existing file if it's too small. The latter
+        // call to File::create() will create a new file.
+        let file_name = match Update::get_boot_info() {
+            Ok(boot_info) => {
+                let file_name = boot_info.next_image_filename();
+                match File::get_info(file_name) {
+                    Ok(file_info) => {
+                        let allocated_length = file_info.allocated_length as usize;
+                        if allocated_length < max_len {
+                            File::remove(file_name)?;
+                        }
+                    },
+                    Err(_) => {
+                        // No file info available; unconditionally remove
+                        // file if it exists.
+                        ignore!(File::remove(file_name));
+                    }
+                };
+                file_name
+            },
+            Err(_) => {
+                return Result::Err(SimpleLinkError::FileSystem(FileSystemError::NOT_SUPPORTED))
+            }
+        };
+        File::create(file_name, max_len, false)
     }
 
     fn reset_is_required(flags: i32) -> bool {
