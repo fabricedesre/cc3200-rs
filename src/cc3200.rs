@@ -13,6 +13,7 @@ use self::cc3200_sys::{board_init, GPIO_IF_LedConfigure, GPIO_IF_LedOn, GPIO_IF_
 use self::cc3200_sys::simplelink::*;
 use logger::SimpleLogger;
 use rtc::RTC;
+use io::{File, Read, Write};
 
 #[allow(non_camel_case_types, dead_code)]
 pub enum LedName {
@@ -215,6 +216,59 @@ impl I2C {
     }
 }
 
+//
+// Image updates
+//
+
+#[derive(Copy, Clone)]
+pub enum ImageStatus {
+    TESTING,
+    TESTREADY,
+    NOTEST
+}
+
+impl ImageStatus {
+    pub fn from_u32(value: u32) -> Result<ImageStatus, ()> {
+        let image_status = match value {
+            IMG_STATUS_TESTING   => ImageStatus::TESTING,
+            IMG_STATUS_TESTREADY => ImageStatus::TESTREADY,
+            IMG_STATUS_NOTEST    => ImageStatus::NOTEST,
+            value => {
+                println!("unknwon image status {}", value);
+                return Err(());
+            }
+        };
+        Ok(image_status)
+    }
+    pub fn to_u32(image_status: ImageStatus) -> Result<u32, ()> {
+        let value = match image_status {
+            ImageStatus::NOTEST    => IMG_STATUS_NOTEST,
+            ImageStatus::TESTREADY => IMG_STATUS_TESTREADY,
+            ImageStatus::TESTING   => IMG_STATUS_TESTING
+        };
+        Ok(value)
+    }
+}
+
+pub struct BootInfo {
+    pub active_image: u8,
+    pub image_status: ImageStatus,
+}
+
+impl BootInfo {
+
+    /// Create a BootInfo structure
+    pub fn new(active_image: u8, image_status: ImageStatus) -> BootInfo {
+        BootInfo { active_image: active_image,
+                   image_status: image_status }
+    }
+
+    /// Create a BootInfo structure the represents the factory reset
+    pub fn factory_reset() -> BootInfo {
+        BootInfo::new(0, ImageStatus::NOTEST)
+    }
+}
+
 pub struct Update { }
 
 impl Update {
@@ -252,8 +306,81 @@ impl Update {
         Update::reset_is_required(res)
     }
 
+    /// Reads or creates the device's boot-info structure
+    pub fn get_boot_info() -> Result<BootInfo, ()> {
+        let boot_info = match Update::read_boot_info() {
+            Ok(boot_info) => boot_info,
+            Err(_) => {
+                let boot_info = BootInfo::factory_reset();
+                match Update::write_boot_info(&boot_info) {
+                    Ok(_)  => { },
+                    Err(_) => { return Err(()); }
+                };
+                boot_info
+            }
+        };
+        Ok(boot_info)
+    }
+
     fn reset_is_required(flags: i32) -> bool {
         (flags & (FLC_TEST_RESET_MCU | FLC_TEST_RESET_NWP)) != 0
+    }
+
+    fn encode_boot_info(boot_info: &BootInfo) -> Result<[u8; 8], ()> {
+        let active_image = boot_info.active_image;
+        let image_status = ImageStatus::to_u32(boot_info.image_status)?;
+        let mut buf: [u8; 8] = [0; 8];
+        buf[0] = active_image;
+        buf[4] = 0xff & (image_status) as u8;
+        buf[5] = 0xff & (image_status >> 8) as u8;
+        buf[6] = 0xff & (image_status >> 16) as u8;
+        buf[7] = 0xff & (image_status >> 24) as u8;
+        Ok(buf)
+    }
+
+    fn decode_boot_info(buf: [u8; 8]) -> Result<BootInfo, ()> {
+        let active_image = buf[0];
+        let image_status = ((buf[4] as u32)) |
+                           ((buf[5] as u32) << 8) |
+                           ((buf[6] as u32) << 16) |
+                           ((buf[7] as u32) << 24);
+        Ok(BootInfo::new(active_image, ImageStatus::from_u32(image_status)?))
+    }
+
+    fn write_boot_info(boot_info: &BootInfo) -> Result<(), ()> {
+
+        let buf = Update::encode_boot_info(boot_info)?;
+
+        let mut file = match File::create(IMG_BOOT_INFO, 8, false) {
+            Ok(file) => file,
+            Err(_)   => { return Err(()); }
+        };
+        match file.write(&buf[..]) {
+            Ok(buflen) => {
+                if buflen < buf.len() {
+                    return Err(());
+                }
+            },
+            Err(_) => { return Err(()); }
+        }
+        Ok(())
+    }
+
+    fn read_boot_info() -> Result<BootInfo, ()> {
+        let mut buf: [u8; 8] = [0; 8];
+        let mut file = match File::open(IMG_BOOT_INFO) {
+            Ok(file) => file,
+            Err(_)   => return Err(())
+        };
+        match file.read(&mut buf) {
+            Ok(buflen) => {
+                if buflen != buf.len() {
+                    return Err(());
+                }
+            },
+            Err(_) => { return Err(()); }
+        };
+        Update::decode_boot_info(buf)
     }
 }
 
