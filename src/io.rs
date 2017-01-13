@@ -50,13 +50,13 @@ impl File {
             allocated_length : 0,
             token : [0; 4]
         };
-        try_fs!(sl_FsGetInfo(file_name.as_ptr(), 0, &mut file_info) as i32);
+        try_fs!(sl_FsGetInfo(File::to_cstr(file_name).as_ptr(), 0, &mut file_info) as i32);
         Ok(file_info)
     }
 
     /// Removes a file fro the file system
     pub fn remove(file_name: &str) -> Result<(), SimpleLinkError> {
-        try_fs!(sl_FsDel(file_name.as_ptr(), 0) as i32);
+        try_fs!(sl_FsDel(File::to_cstr(file_name).as_ptr(), 0) as i32);
         Ok(())
     }
 
@@ -77,8 +77,9 @@ impl File {
 
     // Open file with the specified mode
     fn open_with_mode(file_name: &str, mode: u32) -> Result<File, SimpleLinkError> {
+
         let mut file_handle = -1 as i32;
-        try_fs!(sl_FsOpen(file_name.as_ptr(), mode, ptr::null(), &mut file_handle));
+        try_fs!(sl_FsOpen(File::to_cstr(file_name).as_ptr(), mode, ptr::null(), &mut file_handle));
         Ok(File { offset: 0, file_handle: file_handle })
     }
 
@@ -96,6 +97,15 @@ impl File {
                               offset as u32,
                               buf.as_ptr(),
                               buf.len() as u32)) as usize)
+    }
+
+    fn to_cstr(rstr: &str) -> Vec<u8> {
+        let mut cstr: Vec<u8> = Vec::with_capacity(1 + rstr.len());
+        for c in rstr.chars() {
+            cstr.push(c as u8);
+        }
+        cstr.push('\0' as u8);
+        cstr
     }
 }
 
