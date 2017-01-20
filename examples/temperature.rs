@@ -11,6 +11,9 @@
 #![feature(alloc)]
 
 #[macro_use]
+extern crate cfg_if;
+
+#[macro_use]
 extern crate cc3200;
 extern crate alloc;
 extern crate freertos_rs;
@@ -18,13 +21,35 @@ extern crate freertos_alloc;
 #[macro_use]
 extern crate log;
 
-use cc3200::cc3200::{Board, I2C, I2COpenMode};
-use cc3200::i2c_devices::TemperatureSensor;
-use cc3200::tmp006::TMP006;
-
-use freertos_rs::{CurrentTask, Duration, Task};
+use cc3200::cc3200::Board;
+use freertos_rs::Task;
 
 static VERSION: &'static str = "1.0";
+
+cfg_if! {
+    if #[cfg(feature = "temperature-tmp006")] {
+
+        use cc3200::cc3200::{I2C, I2COpenMode};
+        use cc3200::i2c_devices::TemperatureSensor;
+        use cc3200::tmp006::TMP006;
+        use freertos_rs::{CurrentTask, Duration};
+
+        fn report_temperature() {
+            let i2c = I2C::open(I2COpenMode::MasterModeFst).unwrap();
+            let temp_sensor = TMP006::default(&i2c).unwrap();
+            debug!("Temperature sensor initialized...");
+            loop {
+                info!("Current temperature is {:.*} C", 1, temp_sensor.get_temperature().unwrap());
+                CurrentTask::delay(Duration::ms(1000))
+            }
+        }
+    } else {
+        fn report_temperature() {
+            warn!("No temperature sensor configured...");
+        }
+    }
+}
+
 
 // Conceptually, this is our program "entry point". It's the first thing the microcontroller will
 // execute when it (re)boots. (As far as the linker is concerned the entry point must be named
@@ -44,13 +69,7 @@ pub fn start() -> ! {
         Task::new()
             .name("temperature")
             .start(|| {
-                let i2c = I2C::open(I2COpenMode::MasterModeFst).unwrap();
-                let temp_sensor = TMP006::default(&i2c).unwrap();
-                debug!("Temperature sensor initialized...");
-                loop {
-                    info!("Current temperature is {:.*} C", 1, temp_sensor.get_temperature().unwrap());
-                    CurrentTask::delay(Duration::ms(1000))
-                }
+                report_temperature();
             })
             .unwrap()
     };
