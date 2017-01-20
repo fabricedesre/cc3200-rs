@@ -25,13 +25,10 @@ extern crate log;
 #[macro_use]
 extern crate collections;
 
-use cc3200::cc3200::{Board, I2C, I2COpenMode, LedEnum, LedName};
+use cc3200::cc3200::{Board, LedEnum, LedName};
 use cc3200::simplelink::{self, NetConfigSet, Policy, SimpleLink, SimpleLinkError, WlanConfig,
                          WlanMode, WlanRxFilterOp, WlanRxFilterOpBuf};
 use cc3200::socket_channel::SocketChannel;
-
-use cc3200::i2c_devices::TemperatureSensor;
-use cc3200::tmp006::TMP006;
 
 use freertos_rs::{CurrentTask, Duration, Task};
 use smallhttp::Client;
@@ -93,20 +90,20 @@ fn configure_simple_link_to_default() -> Result<(), Error> {
     // Get the device's version-information
     let ver = SimpleLink::get_version();
 
-    println!("Host Driver Version: {}", SimpleLink::get_driver_version());
-    println!("Build Version {}.{}.{}.{}.31.{}.{}.{}.{}.{}.{}.{}.{}",
-             ver.nwp_version[0],
-             ver.nwp_version[1],
-             ver.nwp_version[2],
-             ver.nwp_version[3],
-             ver.fw_version[0],
-             ver.fw_version[1],
-             ver.fw_version[2],
-             ver.fw_version[3],
-             ver.phy_version[0],
-             ver.phy_version[1],
-             ver.phy_version[2],
-             ver.phy_version[3]);
+    info!("Host Driver Version: {}", SimpleLink::get_driver_version());
+    info!("Build Version {}.{}.{}.{}.31.{}.{}.{}.{}.{}.{}.{}.{}",
+          ver.nwp_version[0],
+          ver.nwp_version[1],
+          ver.nwp_version[2],
+          ver.nwp_version[3],
+          ver.fw_version[0],
+          ver.fw_version[1],
+          ver.fw_version[2],
+          ver.fw_version[3],
+          ver.phy_version[0],
+          ver.phy_version[1],
+          ver.phy_version[2],
+          ver.phy_version[3]);
 
     // Set connection policy to Auto + SmartConfig
     //      (Device's default connection policy)
@@ -158,7 +155,7 @@ fn wlan_connect() -> Result<(), Error> {
 
     try!(SimpleLink::wlan_connect(config::SSID, &[], sec_params, None));
 
-    println!("Connecting to {} ...", config::SSID);
+    info!("Connecting to {} ...", config::SSID);
     // Wait for WLAN event
     while !SimpleLink::is_connected() || !SimpleLink::is_ip_acquired() {
         // Toggle LEDs to indicate Connection Progress
@@ -178,25 +175,16 @@ fn wlan_station_mode() -> Result<(), Error> {
     if mode != WlanMode::ROLE_STA {
         return Err(Error::App(AppError::DEVICE_NOT_IN_STATION_MODE));
     }
-    println!("Device started as STATION");
+    info!("Device started as STATION");
 
     try!(wlan_connect());
 
-    println!("Connection established w/ AP and IP is aquired");
-
-    let i2c = I2C::open(I2COpenMode::MasterModeFst).unwrap();
-    let temp_sensor = TMP006::default(&i2c).unwrap();
-
-    println!("Will now send temperature to the server...");
+    info!("Connection established w/ AP and IP is aquired");
 
     loop {
-        let temperature: u32 = (temp_sensor.get_temperature().unwrap() * 10.0) as u32;
-        info!("Feels like {}.{} C", temperature / 10, temperature % 10);
         let mut client = Client::new(SocketChannel::new().unwrap());
-        let response = client.get("http://10.252.33.245:8000/endpoint")
+        let response = client.get("http://firefox.com/")
             .open()
-            .unwrap()
-            .send(&[])
             .unwrap()
             .response(|_| false)
             .unwrap();
@@ -233,7 +221,7 @@ pub fn start() -> ! {
 
     Board::init();
 
-    println!("Welcome to CC3200 HTTP Client {}", VERSION);
+    info!("Welcome to CC3200 HTTP Client {}", VERSION);
 
     let _client = {
         Task::new()
@@ -241,8 +229,8 @@ pub fn start() -> ! {
             .stack_size(2048) // 32-bit words
             .start(|| {
                 match http_demo() {
-                    Ok(())  => { println!("http_demo succeeded"); },
-                    Err(e)  => { println!("http_demo failed: {:?}", e); },
+                    Ok(())  => { info!("http_demo succeeded"); },
+                    Err(e)  => { error!("http_demo failed: {:?}", e); },
                 };
                 loop {}
             })
