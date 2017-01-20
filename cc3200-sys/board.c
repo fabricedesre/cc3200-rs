@@ -216,29 +216,6 @@ vApplicationIdleHook( void)
     //Handle Idle Hook for Profiling, Power Management etc
 }
 
-void *memset(void *s, int c, size_t n) {
-    if (c == 0 && ((uintptr_t)s & 3) == 0) {
-        // aligned store of 0
-        uint32_t *s32 = s;
-        for (size_t i = n >> 2; i > 0; i--) {
-            *s32++ = 0;
-        }
-        if (n & 2) {
-            *((uint16_t*)s32) = 0;
-            s32 = (uint32_t*)((uint16_t*)s32 + 1);
-        }
-        if (n & 1) {
-            *((uint8_t*)s32) = 0;
-        }
-    } else {
-        uint8_t *s2 = s;
-        for (; n > 0; n--) {
-            *s2++ = c;
-        }
-    }
-    return s;
-}
-
 static char *fmt_hex(uint32_t val, char *buf) {
     const char *hexDig = "0123456789abcdef";
 
