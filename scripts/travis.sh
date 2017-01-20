@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 curl https://sh.rustup.rs -sSf -o rustup.sh
 chmod +x ./rustup.sh
 ./rustup.sh -y
