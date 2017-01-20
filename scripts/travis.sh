@@ -6,7 +6,7 @@ chmod +x ./rustup.sh
 export PATH=/home/travis/.cargo/bin:$PATH
 rustup override set nightly-2016-11-06
 rustup component add rust-src
-cargo install xargo
+cargo install --vers 0.2 xargo
 cargo --version
 xargo --version
 rustc --version
