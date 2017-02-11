@@ -4,6 +4,7 @@
 
 extern crate cc3200_sys;
 
+use collections::String;
 use core;
 use core::result::Result;
 
@@ -60,9 +61,22 @@ impl Board {
         RTC::init();
     }
 
+    pub fn is_debugger_running() -> bool {
+        unsafe { cc3200_sys::is_debugger_running() }
+    }
+
     pub fn test() {
         unsafe {
             cc3200_sys::board_test();
+        }
+    }
+
+    pub fn print_reg(label: &str, val: u32) {
+        let mut s = String::with_capacity(label.len() + 1);
+        s.push_str(label);
+        s.push('\0');
+        unsafe {
+            cc3200_sys::print_reg(s.as_ptr(), val);
         }
     }
 

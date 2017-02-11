@@ -5,6 +5,8 @@
 extern crate core;
 
 use core::cmp::min;
+use core::str;
+use collections::string::String;
 
 pub fn fill_buf(buf: &mut [u8], fill_byte: u8) {
     for ch in buf.iter_mut() {
@@ -24,10 +26,27 @@ pub fn format_hex_into(buf: &mut [u8], num: u32) -> bool {
         *ch = digit[(num & 0x0f) as usize];
         num >>= 4;
     }
-    return true;
+    true
 }
 
-pub const FMT_MAC_ADDR_LEN: usize = 17;
+pub fn format_ip_as_string(ip: u32) -> String {
+
+    let mut ip_string = String::with_capacity(15); // 999.999.999.999
+
+    let mut int_str: [u8; 3] = *b"999";
+
+    for i in 0..4 {
+        let shift = 24 - i * 8;
+        format_int_into(&mut int_str, ((ip >> shift) & 0xff) as i32, ' ');
+        ip_string.push_str(str::from_utf8(&int_str).unwrap().trim_left());
+        if shift > 0 {
+            ip_string.push_str(".");
+        }
+    }
+    ip_string
+}
+
+pub const FMT_MAC_ADDR_LEN: usize = 17; // xx:xx:xx:xx:xx:xx
 
 pub fn format_mac_addr_into(buf: &mut [u8; FMT_MAC_ADDR_LEN], mac_addr: [u8; 6]) -> bool {
     buf.copy_from_slice(b"xx:xx:xx:xx:xx:xx");
@@ -38,7 +57,19 @@ pub fn format_mac_addr_into(buf: &mut [u8; FMT_MAC_ADDR_LEN], mac_addr: [u8; 6])
     format_hex_into(&mut buf[12..14], mac_addr[4] as u32);
     format_hex_into(&mut buf[15..17], mac_addr[5] as u32);
 
-    return true;
+    true
+}
+
+pub fn format_bssid_into(buf: &mut[u8; 17], bssid: [u8; 6]) -> bool {
+    buf.copy_from_slice(b"xx:xx:xx:xx:xx:xx");
+    format_hex_into(&mut buf[0..2], bssid[0] as u32);
+    format_hex_into(&mut buf[3..5], bssid[1] as u32);
+    format_hex_into(&mut buf[6..8], bssid[2] as u32);
+    format_hex_into(&mut buf[9..11], bssid[3] as u32);
+    format_hex_into(&mut buf[12..14], bssid[4] as u32);
+    format_hex_into(&mut buf[15..17], bssid[5] as u32);
+
+    true
 }
 
 pub fn format_int_into(buf: &mut [u8], num: i32, fill: char) -> bool {

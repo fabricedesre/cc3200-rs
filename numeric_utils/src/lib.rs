@@ -4,6 +4,10 @@
 
 #![no_std]
 
+#![feature(collections)]
+#[macro_use]
+extern crate collections;
+
 pub mod parse;
 pub use parse::*;
 

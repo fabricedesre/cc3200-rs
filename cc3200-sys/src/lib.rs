@@ -6,14 +6,18 @@
 // those are not available in this platform.
 #![no_std]
 #![feature(try_from)]
+#![feature(untagged_unions)]
+#![feature(collections)]
 
-#![feature(try_from)]
+#[macro_use]
+extern crate collections;
 
 #[macro_use]
 extern crate log;
 
 pub use self::UtilsDelay as MAP_UtilsDelay;
 
+#[macro_use]
 pub mod simplelink;
 pub mod socket;
 
@@ -23,6 +27,9 @@ extern "C" {
     pub fn board_test();
     pub fn console_putchar(char: i8);
     pub fn reset();
+    pub fn is_isr_active() -> bool;
+    pub fn is_debugger_running() -> bool;
+    pub fn print_reg(label: *const u8, val: u32);
 
     // From sdk/examples/common/gpio_if.c
     pub fn GPIO_IF_LedConfigure(pins: u8);

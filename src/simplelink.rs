@@ -9,6 +9,11 @@ use core::mem;
 use core::ptr;
 use core::slice;
 use core::str;
+use collections::String;
+use freertos_rs::{Duration, Mutex, MutexGuard};
+
+use numeric_utils::{format_bssid_into, format_ip_as_string};
+use cc3200_sys::socket;
 
 pub use self::cc3200_sys::simplelink::*;
 
@@ -22,6 +27,8 @@ macro_rules! try_wlan {
     })
 }
 
+// UNIQUE_ID is set exactly once, and it never changes after that, so we
+// don't need to use a Mutex.
 lazy_static! {
     static ref UNIQUE_ID: u64 = {
         let mut mac_addr: [u8; SL_MAC_ADDR_LEN] = [0; SL_MAC_ADDR_LEN];
@@ -33,6 +40,75 @@ lazy_static! {
             0
         }
     };
+}
+
+pub struct SimpleLinkGlobals {
+    inner: Mutex<SimpleLinkGlobalsInner>,
+}
+
+#[derive(Default)]
+pub struct SimpleLinkGlobalsInner {
+    connection_ssid_len: u8,
+    connection_ssid_buf: [u8; 32],
+    connection_bssid: [u8; 6],
+    ping_packets_rcvd: u32,
+    gateway_ip: u32,
+
+    // TODO: See if we can replace status with event flags.
+    status: u32,
+}
+
+impl SimpleLinkGlobalsInner {
+    pub fn clear_all(&mut self) {
+        self.clear_connection_ssid();
+        self.clear_connection_bssid();
+        self.ping_packets_rcvd = 0;
+        self.gateway_ip = 0;
+        self.status = 0;
+    }
+
+    pub fn connection_ssid(&self) -> String {
+        String::from_utf8_lossy(&self.connection_ssid_buf[0..self.connection_ssid_len as usize])
+            .into_owned()
+    }
+
+    pub fn clear_connection_ssid(&mut self) {
+        self.connection_ssid_len = 0;
+        self.connection_ssid_buf = [0; 32];
+    }
+
+    pub fn clear_connection_bssid(&mut self) {
+        self.connection_bssid = [0; 6];
+    }
+
+    pub fn get_status_bit(&self, status_bit: StatusBit) -> bool {
+        (self.status & (1 << (status_bit as u32))) != 0
+    }
+
+    pub fn set_status_bit(&mut self, status_bit: StatusBit) {
+        self.status |= 1 << (status_bit as u32);
+    }
+
+    pub fn clear_status_bit(&mut self, status_bit: StatusBit) {
+        self.status &= !(1 << (status_bit as u32));
+    }
+}
+
+lazy_static! {
+    static ref GLOBALS: SimpleLinkGlobals = SimpleLinkGlobals {
+        inner: Mutex::new(SimpleLinkGlobalsInner {..Default::default() }).unwrap(),
+    };
+}
+
+impl SimpleLinkGlobals {
+    pub fn lock(&self) -> MutexGuard<SimpleLinkGlobalsInner> {
+        self.inner.lock(Duration::infinite()).unwrap()
+    }
+
+    // TODO: Maybe we should create an SSID struct?
+    pub fn connection_ssid(&self) -> String {
+        self.lock().connection_ssid()
+    }
 }
 
 pub struct SimpleLink { }
@@ -49,7 +125,12 @@ impl SimpleLink {
 
     pub fn get_version() -> SlVersionFull {
         let mut version: SlVersionFull = Default::default();
-        unsafe { simplelink_get_version(&mut version) };
+        let mut ver_slice: &mut [u8] =
+            unsafe {
+                slice::from_raw_parts_mut(&mut version as *mut _ as *mut u8,
+                                          mem::size_of_val(&version))
+            };
+        SimpleLink::dev_cfg_get(DeviceConfig::GeneralConfig, &mut ver_slice);
         version
     }
 
@@ -64,38 +145,46 @@ impl SimpleLink {
     // App Variables
 
     pub fn init_app_variables() {
-        unsafe {
-            simplelink_init_app_variables();
-        }
+        let ref mut globals = GLOBALS.lock();
+        globals.clear_all();
     }
 
     pub fn is_ip_acquired() -> bool {
-        unsafe { simplelink_get_status_bit(StatusBit::STATUS_BIT_IP_AQUIRED as u32) }
+        // get_status_bit(StatusBit::STATUS_BIT_IP_ACQUIRED)
+        GLOBALS.lock().get_status_bit(StatusBit::STATUS_BIT_IP_ACQUIRED)
     }
 
     pub fn is_connected() -> bool {
-        unsafe { simplelink_get_status_bit(StatusBit::STATUS_BIT_CONNECTION as u32) }
+        // get_status_bit(StatusBit::STATUS_BIT_CONNECTION)
+        GLOBALS.lock().get_status_bit(StatusBit::STATUS_BIT_CONNECTION)
     }
 
     pub fn is_ping_done() -> bool {
-        unsafe { simplelink_get_status_bit(StatusBit::STATUS_BIT_PING_DONE as u32) }
+        // get_status_bit(StatusBit::STATUS_BIT_PING_DONE)
+        GLOBALS.lock().get_status_bit(StatusBit::STATUS_BIT_PING_DONE)
     }
 
     pub fn clear_ping_done() {
-        unsafe { simplelink_clear_status_bit(StatusBit::STATUS_BIT_PING_DONE as u32) };
+        // clear_status_bit(StatusBit::STATUS_BIT_PING_DONE)
+        GLOBALS.lock().clear_status_bit(StatusBit::STATUS_BIT_PING_DONE)
     }
 
     pub fn gateway_ip() -> u32 {
-        unsafe { simplelink_gateway_ip() }
+        GLOBALS.lock().gateway_ip
     }
 
     pub fn ping_packets_received() -> u32 {
-        unsafe { simplelink_ping_packets_received() }
+        GLOBALS.lock().ping_packets_rcvd
     }
 
     // Device
 
     pub fn start() -> Result<WlanMode, SimpleLinkError> {
+
+        // This will trigger initialization of the GLOBALS, which will in turn
+        // create the Mutex
+        let _ = *GLOBALS;
+
         let rc = try_wlan!(sl_Start(ptr::null(), ptr::null(), None));
         Ok(try!(WlanMode::try_from(rc)))
     }
@@ -107,6 +196,18 @@ impl SimpleLink {
 
     pub fn unique_id() -> u64 {
         *UNIQUE_ID
+    }
+
+    pub fn dev_cfg_get(config: DeviceConfig, result: &mut [u8]) {
+        let config_id = ((config as u32 & 0xff00) >> 8) as u8;
+        let mut config_opt = (config as u32 & 0x00ff) as u8;
+        let mut result_len = result.len() as u8;
+        unsafe {
+            sl_DevGet(config_id,
+                      &mut config_opt,
+                      &mut result_len,
+                      result.as_mut_ptr());
+        }
     }
 
     // Net App
@@ -243,4 +344,173 @@ impl SimpleLink {
         try_wlan!(sl_WlanRxFilterSet(op as u8, buf_ptr, buf_size));
         Ok(())
     }
+}
+
+#[linkage = "weak"]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn SimpleLinkGeneralEventHandler(dev_event: *const SlDeviceEvent) {
+    let dev_event = unsafe { &*dev_event };
+    match SlDeviceDriverError::try_from(dev_event.event_num) {
+
+        Ok(SlDeviceDriverError::SL_DEVICE_GENERAL_ERROR_EVENT) => {
+            let device_event = unsafe { &dev_event.event_data.device_event };
+            println!("[GENERAL EVENT] ID=[{}] Sender=[{}]",
+                     device_event.status,
+                     device_event.sender);
+        }
+
+        Ok(SlDeviceDriverError::SL_DEVICE_ABORT_ERROR_EVENT) => {
+            let device_report = unsafe { &dev_event.event_data.device_report };
+            println!("[ABORT EVENT] Type=[{}] Data=[{}]",
+                     device_report.abort_type,
+                     device_report.abort_data);
+        }
+
+        Ok(SlDeviceDriverError::SL_DEVICE_DRIVER_ASSERT_ERROR_EVENT) |
+        Ok(SlDeviceDriverError::SL_DEVICE_DRIVER_TIMEOUT_CMD_COMPLETE) |
+        Ok(SlDeviceDriverError::SL_DEVICE_DRIVER_TIMEOUT_SYNC_PATTERN) |
+        Ok(SlDeviceDriverError::SL_DEVICE_DRIVER_TIMEOUT_ASYNC_EVENT) => {
+            let device_driver_report = unsafe { &dev_event.event_data.device_driver_report };
+            println!("[DRIVER ERROR] Error=[{}] Info=[{}]",
+                     dev_event.event_num,
+                     device_driver_report.info);
+        }
+
+        Err(_) => {
+            println!("[UNKNOWN EVENT] [{}]", dev_event.event_num);
+        }
+    }
+
+}
+
+#[linkage = "weak"]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn SimpleLinkWlanEventHandler(wlan_event: *mut SlWlanEvent_t) {
+    let wlan_event = unsafe { &*wlan_event };
+    let ref mut globals = GLOBALS.lock();
+    match WlanEvent::try_from(wlan_event.event_type as i16) {
+
+        Ok(WlanEvent::SL_WLAN_CONNECT_EVENT) => {
+            let connection_event =
+                unsafe { &wlan_event.event_data.sta_and_p2p_mode_wlan_connected };
+
+            globals.connection_ssid_len = connection_event.ssid_len;
+            globals.connection_ssid_buf = connection_event.ssid_name;
+            globals.connection_bssid = connection_event.bssid;
+
+            let mut bssid_str: [u8; 17] = [0; 17];
+            format_bssid_into(&mut bssid_str, globals.connection_bssid);
+
+            println!("[WLAN EVENT] STA Connected to AP: '{}', BSSID: {}",
+                     globals.connection_ssid(),
+                     str::from_utf8(&bssid_str[0..17]).unwrap());
+
+            globals.set_status_bit(StatusBit::STATUS_BIT_CONNECTION);
+        }
+
+        Ok(WlanEvent::SL_WLAN_DISCONNECT_EVENT) => {
+            let disconnect_event =
+                unsafe { &wlan_event.event_data.sta_and_p2p_mode_wlan_disconnected };
+
+            globals.clear_status_bit(StatusBit::STATUS_BIT_CONNECTION);
+            globals.clear_status_bit(StatusBit::STATUS_BIT_IP_ACQUIRED);
+
+            let mut bssid_str: [u8; 17] = [0; 17];
+            format_bssid_into(&mut bssid_str, globals.connection_bssid);
+
+            match WlanDisconnectReason::try_from(disconnect_event.reason_code as u32) {
+                Ok(WlanDisconnectReason::SL_WLAN_DISCONNECT_USER_INITIATED_DISCONNECTION) => {
+                    println!("[WLAN EVENT]Device disconnected from the AP: '{}', BSSID: {} on \
+                              applications request",
+                             globals.connection_ssid(),
+                             str::from_utf8(&bssid_str[0..17]).unwrap());
+                }
+                _ => {
+                    println!("[WLAN_ERROR] Device disconnected from the AP: '{}' BSSID: {} on an \
+                              ERROR..!!",
+                             GLOBALS.connection_ssid(),
+                             str::from_utf8(&bssid_str[0..17]).unwrap());
+                }
+            };
+
+            globals.clear_connection_ssid();
+            globals.clear_connection_bssid();
+        }
+
+        _ => {
+            println!("Unexpected event: {}", wlan_event.event_type);
+        }
+    }
+}
+
+#[linkage = "weak"]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn SimpleLinkNetAppEventHandler(net_app_event: *const SlNetAppEvent) {
+    let net_app_event = unsafe { &*net_app_event };
+    let ref mut globals = GLOBALS.lock();
+
+    match NetAppEvent::try_from(net_app_event.event) {
+
+        Ok(NetAppEvent::SL_NETAPP_IPV4_IPACQUIRED_EVENT) => {
+            let event_data = unsafe { &net_app_event.event_data.ip_acquired_v4 };
+            globals.gateway_ip = event_data.gateway;
+            println!("[NETAPP EVENT] IP Acquired: IP: {}, Gateway: {}",
+                     format_ip_as_string(event_data.ip),
+                     format_ip_as_string(event_data.gateway));
+            globals.set_status_bit(StatusBit::STATUS_BIT_IP_ACQUIRED);
+        }
+
+        _ => {
+            println!("[NETAPP EVENT] Unexpected event [{}]", net_app_event.event);
+        }
+    }
+}
+
+#[linkage = "weak"]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn SimpleLinkSockEventHandler(sock_event: *const socket::SlSockEvent) {
+    let sock_event = unsafe { &*sock_event };
+    match socket::SlSocketEventNum::try_from(sock_event.event_num) {
+        Ok(socket::SlSocketEventNum::SL_SOCKET_TX_FAILED_EVENT) => {
+            let tx_fail_data = unsafe { &sock_event.event_data.tx_fail_data };
+            if tx_fail_data.status == socket::SocketError::ECLOSE as i16 {
+                println!("[SOCK ERROR] close socket ({}) operation failed to transmit all queued \
+                          packets",
+                         tx_fail_data.sd);
+            } else {
+                println!("[SOCK ERROR] TX FAILED: socket ({}), reason {}",
+                         tx_fail_data.sd,
+                         tx_fail_data.status);
+            }
+        }
+
+        Ok(socket::SlSocketEventNum::SL_SOCKET_ASYNC_EVENT) => {
+            // Nothing to do.
+        }
+
+        Err(_) => {
+            println!("[SOCK EVENT] Unexpected Event [{:#x}]",
+                     sock_event.event_num);
+        }
+    };
+}
+
+#[linkage = "weak"]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn SimpleLinkPingReport(ping_report: *mut SlPingReport) {
+    let ref mut globals = GLOBALS.lock();
+    globals.ping_packets_rcvd = unsafe { (*ping_report).packets_rcvd };
+    globals.set_status_bit(StatusBit::STATUS_BIT_PING_DONE);
+}
+
+#[linkage = "weak"]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "C" fn SimpleLinkHttpServerCallback() {
+    // Unused in this application
 }

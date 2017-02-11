@@ -8,13 +8,17 @@
 
 #![feature(asm, lang_items)]
 // For i2c_devices pow functions.
+#![feature(alloc)]
 #![feature(core_intrinsics)]
 #![feature(collections)]
 #![feature(try_from)]
+#![feature(linkage)]  // allows us to create weak functions
+
 
 // #![feature(compiler_builtins_lib)]
 // extern crate compiler_builtins;
 
+extern crate alloc;
 extern crate cc3200_sys;
 #[macro_use]
 extern crate log;

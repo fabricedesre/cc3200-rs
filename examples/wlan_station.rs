@@ -186,11 +186,7 @@ fn wlan_connect() -> Result<(), Error> {
 
 fn ping_ip(ip: u32) -> Result<(), Error> {
 
-    info!("Pinging {}.{}.{}.{} ...",
-          (ip >> 24) & 0xff,
-          (ip >> 16) & 0xff,
-          (ip >> 8) & 0xff,
-          ip & 0xff);
+    info!("Pinging {} ...", format::format_ip_as_string(ip));
 
     let ping_params = simplelink::SlPingStartCommand {
         ping_interval_time: PING_INTERVAL,
@@ -207,7 +203,8 @@ fn ping_ip(ip: u32) -> Result<(), Error> {
     SimpleLink::clear_ping_done();
     try!(SimpleLink::netapp_ping_start(&ping_params, SocketFamily::AF_INET));
     while !SimpleLink::is_ping_done() {
-        CurrentTask::delay(Duration::ms(100));
+        println!("Waiting for ping completion");
+        CurrentTask::delay(Duration::ms(1000));
     }
     if SimpleLink::ping_packets_received() == 0 {
         return Err(Error::App(AppError::PING_FAILED));
@@ -280,7 +277,7 @@ pub fn start() -> ! {
 
     Board::init();
 
-    println!("Welcome to CC3200 HTTP Client {}", VERSION);
+    println!("Welcome to CC3200 wlan_station demo {}", VERSION);
 
     let _client = {
         Task::new()

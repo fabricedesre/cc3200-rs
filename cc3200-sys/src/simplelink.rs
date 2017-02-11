@@ -60,6 +60,12 @@ macro_rules! c_like_enum {
         impl TryFrom<i16> for $name {
             type Err = SimpleLinkError;
             fn try_from(value: i16) -> Result<Self, Self::Err> {
+                $name::try_from(value as u32)
+            }
+        }
+        impl TryFrom<u32> for $name {
+            type Err = SimpleLinkError;
+            fn try_from(value: u32) -> Result<Self, Self::Err> {
                 match value {
                     $($value => Ok($name::$variant),)+
                     n => Err(SimpleLinkError::ValueError(stringify!($name), n as i32))
@@ -172,7 +178,7 @@ c_like_enum! {
         STATUS_BIT_IP_LEASED = 2,
 
         // If this bit is set: the device has acquired an IP
-        STATUS_BIT_IP_AQUIRED = 3,
+        STATUS_BIT_IP_ACQUIRED = 3,
 
         // If this bit is set: the SmartConfiguration process is
         // started from SmartConfig app
@@ -440,7 +446,225 @@ pub struct SlFsFileInfo {
     pub flags: u16,
     pub file_length: u32,
     pub allocated_length: u32,
-    pub token: [u32; 4]
+    pub token: [u32; 4],
+}
+
+// Event field in SlWlanEvent_t structure.
+c_like_enum! {
+    WlanEvent {
+        SL_WLAN_CONNECT_EVENT = 1,
+        SL_WLAN_DISCONNECT_EVENT = 2,
+
+        // WLAN Smart Config user events
+        SL_WLAN_SMART_CONFIG_COMPLETE_EVENT = 3,
+        SL_WLAN_SMART_CONFIG_STOP_EVENT = 4,
+
+        // WLAN AP user events
+        SL_WLAN_STA_CONNECTED_EVENT = 5,
+        SL_WLAN_STA_DISCONNECTED_EVENT= 6,
+
+        // WLAN P2P user events
+        SL_WLAN_P2P_DEV_FOUND_EVENT = 7,
+        SL_WLAN_P2P_NEG_REQ_RECEIVED_EVENT = 8,
+        SL_WLAN_CONNECTION_FAILED_EVENT = 9
+    }
+}
+
+// slWlanConnectAsyncResponse_t reason_code (for SL_WLAN_DISCONNECT_EVENT)
+c_like_enum! {
+    WlanDisconnectReason {
+        SL_WLAN_DISCONNECT_UNSPECIFIED_REASON = 1,
+        SL_WLAN_DISCONNECT_PREV_AUTH_NOT_VALID = 2,
+        SL_WLAN_DISCONNECT_DEAUTH_LEAVING = 3,
+        SL_WLAN_DISCONNECT_DISASSOC_DUE_TO_INACTIVITY = 4,
+        SL_WLAN_DISCONNECT_DISASSOC_AP_BUSY = 5,
+        SL_WLAN_DISCONNECT_CLASS2_FRAME_FROM_NONAUTH_STA = 6,
+        SL_WLAN_DISCONNECT_CLASS3_FRAME_FROM_NONASSOC_STA = 7,
+        SL_WLAN_DISCONNECT_DISASSOC_STA_HAS_LEFT = 8,
+        SL_WLAN_DISCONNECT_STA_REQ_ASSOC_WITHOUT_AUTH = 9,
+        SL_WLAN_DISCONNECT_PWR_CAPABILITY_NOT_VALID = 10,
+        SL_WLAN_DISCONNECT_SUPPORTED_CHANNEL_NOT_VALID = 11,
+        SL_WLAN_DISCONNECT_INVALID_IE = 13,
+        SL_WLAN_DISCONNECT_MIC_FAILURE = 14,
+        SL_WLAN_DISCONNECT_4WAY_HANDSHAKE_TIMEOUT = 15,
+        SL_WLAN_DISCONNECT_GROUP_KEY_UPDATE_TIMEOUT = 16,
+        SL_WLAN_DISCONNECT_IE_IN_4WAY_DIFFERS = 17,
+        SL_WLAN_DISCONNECT_GROUP_CIPHER_NOT_VALID = 18,
+        SL_WLAN_DISCONNECT_PAIRWISE_CIPHER_NOT_VALID = 19,
+        SL_WLAN_DISCONNECT_AKMP_NOT_VALID = 20,
+        SL_WLAN_DISCONNECT_UNSUPPORTED_RSN_IE_VERSION = 21,
+        SL_WLAN_DISCONNECT_INVALID_RSN_IE_CAPAB = 22,
+        SL_WLAN_DISCONNECT_IEEE_802_1X_AUTH_FAILED = 23,
+        SL_WLAN_DISCONNECT_CIPHER_SUITE_REJECTED = 24,
+        SL_WLAN_DISCONNECT_DISASSOC_LOW_ACK = 34,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_NONE = 100,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_LOW_TX_RATE = 104,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_LOW_SNR = 105,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_LOW_QUALITY = 106,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_TSPEC_REJECTED = 107,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_MAX_TX_RETRIES = 108,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_BSS_LOSS = 109,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_BSS_LOSS_DUE_TO_MAX_TX_RETRY = 110,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_SWITCH_CHANNEL = 111,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_AP_DISCONNECT = 112,
+        SL_WLAN_DISCONNECT_ROAMING_TRIGGER_SECURITY_ATTACK = 113,
+        SL_WLAN_DISCONNECT_USER_INITIATED_DISCONNECTION = 200
+    }
+}
+
+#[repr(C)]
+pub struct slWlanConnectAsyncResponse {
+    pub connection_type: u8, // 0-STA,3-P2P_CL
+    pub ssid_len: u8,
+    pub ssid_name: [u8; 32],
+    pub go_peer_device_name_len: u8,
+    pub go_peer_device_name: [u8; 32],
+    pub bssid: [u8; 6],
+    pub reason_code: u8,
+    pub padding: [u8; 2],
+}
+
+#[repr(C)]
+pub union SlWlanEventData {
+    // other members have been omitted since we don't use them yet.
+    //
+    // SL_WLAN_CONNECT_EVENT - relevant only in STA and P2P mode
+    // holds information regarding a new connection
+    pub sta_and_p2p_mode_wlan_connected: slWlanConnectAsyncResponse,
+
+    // SL_WLAN_DISCONNECT_EVENT - relevant only in STA and P2P mode
+    // holds information regarding a disconnection
+    pub sta_and_p2p_mode_wlan_disconnected: slWlanConnectAsyncResponse,
+}
+
+#[repr(C)]
+pub struct SlWlanEvent_t {
+    pub event_type: u32,
+    pub event_data: SlWlanEventData,
+}
+
+// Encodes the ConfigId and ConfigOpt into a single value.
+// The ConfigId is in  in bits 8-15 and ConfigOpt is in bits 0-7
+c_like_enum! {
+    DeviceConfig {
+        GeneralConfig = 0x010c
+    }
+}
+
+c_like_enum! {
+    SlDeviceDriverError {
+        SL_DEVICE_GENERAL_ERROR_EVENT = 1,
+        SL_DEVICE_ABORT_ERROR_EVENT = 2,
+        SL_DEVICE_DRIVER_ASSERT_ERROR_EVENT = 3,
+        SL_DEVICE_DRIVER_TIMEOUT_CMD_COMPLETE = 4,
+        SL_DEVICE_DRIVER_TIMEOUT_SYNC_PATTERN = 5,
+        SL_DEVICE_DRIVER_TIMEOUT_ASYNC_EVENT = 6
+    }
+}
+
+c_like_enum! {
+    SlErrorSender {
+        SL_ERR_SENDER_HEALTH_MON = 0,
+        SL_ERR_SENDER_CLI_UART = 1,
+        SL_ERR_SENDER_SUPPLICANT = 2,
+        SL_ERR_SENDER_NETWORK_STACK = 3,
+        SL_ERR_SENDER_WLAN_DRV_IF = 4,
+        SL_ERR_SENDER_WILINK = 5,
+        SL_ERR_SENDER_INIT_APP = 6,
+        SL_ERR_SENDER_NETX = 7,
+        SL_ERR_SENDER_HOST_APD = 8,
+        SL_ERR_SENDER_MDNS = 9,
+        SL_ERR_SENDER_HTTP_SERVER = 10,
+        SL_ERR_SENDER_DHCP_SERVER = 11,
+        SL_ERR_SENDER_DHCP_CLIENT = 12,
+        SL_ERR_DISPATCHER = 13
+    }
+}
+
+#[repr(C)]
+pub struct sl_DeviceReport {
+    pub status: i8,
+    pub sender: u32,
+}
+
+#[repr(C)]
+pub struct sl_DeviceReportAbort {
+    pub abort_type: u32,
+    pub abort_data: u32,
+}
+
+#[repr(C)]
+pub struct sl_DeviceDriverErrorReport {
+    pub info: u32,
+}
+
+#[repr(C)]
+pub union SlDeviceEventData {
+    pub device_event: sl_DeviceReport, // SL_DEVICE_GENERAL_ERROR_EVENT
+    pub device_report: sl_DeviceReportAbort, // SL_DEVICE_ABORT_ERROR_EVENT
+    pub device_driver_report: sl_DeviceDriverErrorReport, // SL_DEVICE_DRIVER_xxx
+}
+
+#[repr(C)]
+pub struct SlDeviceEvent {
+    pub event_num: u32,
+    pub event_data: SlDeviceEventData,
+}
+
+#[repr(C)]
+pub struct SlIpV4AcquiredAsync {
+    pub ip: u32,
+    pub gateway: u32,
+    pub dns: u32,
+}
+
+#[repr(C)]
+pub struct SlIpV6AcquiredAsync {
+    pub typ: u32,
+    pub ip: [u32; 4],
+    pub gateway: [u32; 4],
+    pub dns: [u32; 4],
+}
+
+#[repr(C)]
+pub struct SlIpLeasedAsync {
+    pub ip_address: u32,
+    pub lease_time: u32,
+    pub mac: [u8; 6],
+    pub padding: u16,
+}
+
+#[repr(C)]
+pub struct SlIpReleasedAsync {
+    pub ip_address: u32,
+    pub mac: [u8; 6],
+    pub reason: u16,
+}
+
+#[repr(C)]
+pub union SlNetAppEventData {
+    // socket.h has an sd element with a tag of SL_SOCKET_TX_FAILED_EVENT
+    // which has a value of 1, but SL_NETAPP_IPV4_IPACQUIRED_EVENT also has
+    // the value 1, so I think that's a typo and left out the sd element.
+    pub ip_acquired_v4: SlIpV4AcquiredAsync, // SL_NETAPP_IPV4_IPACQUIRED_EVENT
+    pub ip_acquired_v6: SlIpV6AcquiredAsync, // SL_NETAPP_IPV6_IPACQUIRED_EVENT
+    pub ip_leased: SlIpLeasedAsync, // SL_NETAPP_IP_LEASED_EVENT
+    pub ip_released: SlIpReleasedAsync, // SL_NETAPP_IP_RELEASED_EVENT
+}
+
+#[repr(C)]
+pub struct SlNetAppEvent {
+    pub event: u32,
+    pub event_data: SlNetAppEventData,
+}
+
+c_like_enum! {
+    NetAppEvent {
+        SL_NETAPP_IPV4_IPACQUIRED_EVENT = 1,
+        SL_NETAPP_IPV6_IPACQUIRED_EVENT = 2,
+        SL_NETAPP_IP_LEASED_EVENT = 3,
+        SL_NETAPP_IP_RELEASED_EVENT = 4
+    }
 }
 
 // Image file paths
@@ -471,6 +695,8 @@ extern "C" {
                     callback: Option<extern "C" fn(status: u32)>)
                     -> i16;
     pub fn sl_Stop(timeout: u16) -> i16;
+
+    pub fn sl_DevGet(config_id: u8, config_opt: *mut u8, len: *mut u8, val: *mut u8) -> i16;
 
     // From simplelink/socket.h
 
@@ -509,7 +735,7 @@ extern "C" {
     pub fn sl_NetAppPingStart(ping_params: *const SlPingStartCommand,
                               famliy: u8,
                               report: *mut SlPingReport,
-                              callback: Option<unsafe extern "C" fn(report: *mut SlPingReport)>)
+                              callback: Option<extern "C" fn(report: *mut SlPingReport)>)
                               -> i16;
 
     // From oslink/osi_freetros.c
@@ -518,19 +744,7 @@ extern "C" {
 
     // From simplelink.c (not in SDK)
 
-    pub fn simplelink_init_app_variables();
-
-    pub fn simplelink_get_status_bit(bit: u32) -> bool;
-    pub fn simplelink_set_status_bit(bit: u32);
-    pub fn simplelink_clear_status_bit(bit: u32);
-
-    pub fn simplelink_get_version(version: *mut SlVersionFull);
     pub fn simplelink_get_driver_version(len: *mut u32) -> *const u8;
-
-    pub fn simplelink_gateway_ip() -> u32;
-    pub fn simplelink_ping_packets_received() -> u32;
-
-    pub fn SimpleLinkPingReport(report: *mut SlPingReport);
 
     // File System
     //
@@ -540,22 +754,16 @@ extern "C" {
     pub fn sl_FsOpen(file_name: *const u8,
                      mode: u32,
                      token: *const u32,
-                     file_handle: *mut i32) -> i32;
+                     file_handle: *mut i32)
+                     -> i32;
     pub fn sl_FsClose(file_handle: i32,
                       certificate_file_name: *const u8,
                       signature: *const u8,
-                      signature_length: u32) -> i16;
-    pub fn sl_FsRead(file_handle: i32,
-                     offset: u32,
-                     data: *mut u8,
-                     len: u32) -> i32;
-    pub fn sl_FsWrite(file_handle: i32,
-                      offset: u32,
-                      data: *const u8,
-                      len: u32) -> i32;
-    pub fn sl_FsGetInfo(filename: *const u8,
-                        token: u32,
-                        file_info: *mut SlFsFileInfo) -> i16;
+                      signature_length: u32)
+                      -> i16;
+    pub fn sl_FsRead(file_handle: i32, offset: u32, data: *mut u8, len: u32) -> i32;
+    pub fn sl_FsWrite(file_handle: i32, offset: u32, data: *const u8, len: u32) -> i32;
+    pub fn sl_FsGetInfo(filename: *const u8, token: u32, file_info: *mut SlFsFileInfo) -> i16;
     pub fn sl_FsDel(filename: *const u8, token: u32) -> i16;
 
     // simplelink.c
