@@ -21,6 +21,8 @@ extern "C" {
     // From board.c
     pub fn board_init();
     pub fn board_test();
+    pub fn console_haschar() -> bool;
+    pub fn console_getchar() -> i8;
     pub fn console_putchar(char: i8);
     pub fn reset();
 
