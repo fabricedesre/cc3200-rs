@@ -19,3 +19,6 @@ vStrPrintf(char* outStr, int maxLen, const char* fmt, va_list args);
 int
 vStrXPrintf(StrXPrintfFunc outFunc,void* outParm, const char* fmt,
             va_list args);
+
+int vsnprintf_into(char *outStr, int maxLen, const char *fmt, va_list args);
+int snprintf_into(char *outStr, int maxLen, const char *fmt, ...);

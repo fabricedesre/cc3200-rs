@@ -642,3 +642,49 @@ StrPrintfFunc(void *outParm, int ch)
     return -1;
 
 } // StrPrintfFunc
+
+// helper function for [v]snprintf_into which just copies into the buffer
+// ensuring that we don't overflow and doesn't null terminate.
+static int snprintf_into_func(void *out_parm, int ch) {
+    StrPrintfParms *str_parm = (StrPrintfParms *) out_parm;
+
+    if (str_parm->maxLen > 0) {
+        *str_parm->str++ = (char)ch;
+        str_parm->maxLen--;
+        return 1;
+    }
+
+    // Whoops. We ran out of space.
+    return -1;
+}
+
+// Prints into the middle of a buffer. So we space pad rather than null
+// terminate.
+int vsnprintf_into(char *outStr, int maxLen, const char *fmt, va_list args)
+{
+    StrPrintfParms str_parm;
+
+    str_parm.str = outStr;
+    str_parm.maxLen = maxLen;
+
+    int rc = vStrXPrintf(snprintf_into_func, &str_parm, fmt, args);
+
+    // Pad out any unused buffer with spaces.
+    while (str_parm.maxLen > 0) {
+        *str_parm.str++ = ' ';
+        str_parm.maxLen--;
+    }
+    return maxLen;
+}
+
+int snprintf_into(char *outStr, int maxLen, const char *fmt, ...)
+{
+    int rc;
+    va_list args;
+
+    va_start(args, fmt);
+    rc = vsnprintf_into(outStr, maxLen, fmt, args);
+    va_end(args);
+
+    return rc;
+}
